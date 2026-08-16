@@ -34,10 +34,32 @@ class TrainSettings:
     max_grad_norm: float = 1.0
     seed: int = 42
     logging_steps: int = 5
+    save_steps: int | None = 100
     kl_coef: float = 0.0
     drop_zero_advantage: bool = True
     min_abs_advantage: float = 1e-8
     cover_all_informative: bool = True
+
+
+def should_save_checkpoint(step: int, save_steps: int | None) -> bool:
+    if save_steps is None:
+        return False
+    interval = int(save_steps)
+    return interval > 0 and int(step) > 0 and int(step) % interval == 0
+
+
+def checkpoint_dir(output_dir: str | Path, step: int) -> Path:
+    return Path(output_dir) / f"checkpoint-{int(step)}"
+
+
+def save_lora_checkpoint(model: Any, output_dir: str | Path, step: int) -> Path:
+    dest = checkpoint_dir(output_dir, step)
+    dest.mkdir(parents=True, exist_ok=True)
+    if hasattr(model, "save_pretrained"):
+        model.save_pretrained(dest)
+    else:
+        raise TypeError("Model does not support save_pretrained")
+    return dest
 
 
 def filter_informative_rows(
@@ -131,6 +153,7 @@ def train_signed_entropy(
     accounting = SearchAccounting()
     accounting.start_timer()
     logs: list[dict[str, Any]] = []
+    checkpoints: list[str] = []
     global_step = 0
     optimizer.zero_grad(set_to_none=True)
     t0 = time.perf_counter()
@@ -182,6 +205,11 @@ def train_signed_entropy(
                         **{k.replace("gpu/", "train/gpu_"): v for k, v in gpu_snapshot().items() if isinstance(v, (int, float))},
                     }
                 )
+            if output_dir is not None and should_save_checkpoint(global_step, settings.save_steps):
+                dest = save_lora_checkpoint(model, output_dir, global_step)
+                checkpoints.append(str(dest))
+                wandb_log({"train/checkpoint_step": global_step})
+                print(f"saved LoRA checkpoint to {dest}")
             if max_steps is not None and global_step >= int(max_steps):
                 break
         if max_steps is not None and global_step >= int(max_steps):
@@ -196,6 +224,7 @@ def train_signed_entropy(
         "num_rows": len(rows),
         "num_rows_dropped": len(incoming) - len(rows),
         "max_steps_effective": max_steps,
+        "checkpoints": checkpoints,
         "accounting": accounting.to_dict(),
     }
     if output_dir is not None:

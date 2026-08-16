@@ -68,6 +68,7 @@ def main() -> None:
         max_grad_norm=t.max_grad_norm,
         seed=t.seed,
         logging_steps=t.logging_steps,
+        save_steps=t.save_steps,
         kl_coef=t.kl_coef,
         drop_zero_advantage=t.drop_zero_advantage,
         min_abs_advantage=t.min_abs_advantage,

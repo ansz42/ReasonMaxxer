@@ -31,6 +31,7 @@ def test_qwen25_3b_test_pack_is_unsloth_lora_math500():
     assert cfg.training.objective == "graded_signed"
     assert cfg.training.drop_zero_advantage is True
     assert cfg.training.cover_all_informative is True
+    assert cfg.training.save_steps == 100
     assert cfg.search.backend == "vllm"
     assert cfg.search.total_samples_per_problem == 12
     assert cfg.search.max_tokens == 3000
