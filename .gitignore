@@ -6,3 +6,6 @@ outputs/
 wandb/
 *.log
 .DS_Store
+offline_search/.venv/
+offline_search/outputs/
+offline_search/**/__pycache__/

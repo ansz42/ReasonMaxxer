@@ -1,0 +1,23 @@
+# Core (always)
+numpy>=1.26
+pyyaml>=6.0
+pandas>=2.2
+pyarrow>=16.0
+tqdm>=4.66
+
+# Training / generation (GPU machine)
+torch>=2.3
+transformers>=4.51
+peft>=0.14
+accelerate>=0.33
+safetensors>=0.4
+sentencepiece>=0.2
+bitsandbytes>=0.43
+
+# Test-pack trainer (Qwen3-1.7B LoRA)
+# Install after torch, from the Unsloth docs for your CUDA version:
+#   pip install unsloth
+unsloth
+
+# Optional experiment tracking
+wandb

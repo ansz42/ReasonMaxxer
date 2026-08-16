@@ -1,0 +1,34 @@
+{
+  "steps": 20,
+  "logs": [
+    {"step": 1, "epoch": 0, "loss": 0.0, "tokens": 19, "advantage_mean": 0.0, "step_time_s": 0.8754646209999919, "gpu/allocated_gb": 1.4201, "gpu/mem_used_mb": 2072.0, "gpu/util_pct": 8.0, "gpu/power_w": 86.74, "gpu/temp_c": 37.0},
+    {"step": 2, "epoch": 0, "loss": 0.0, "tokens": 64, "advantage_mean": 0.0, "step_time_s": 1.0806045759995868, "gpu/allocated_gb": 1.4393, "gpu/mem_used_mb": 2232.0, "gpu/util_pct": 10.0, "gpu/power_w": 90.88, "gpu/temp_c": 37.0},
+    {"step": 3, "epoch": 0, "loss": 0.0, "tokens": 142, "advantage_mean": 0.0, "step_time_s": 1.2844058589998895, "gpu/allocated_gb": 1.459, "gpu/mem_used_mb": 2524.0, "gpu/util_pct": 14.0, "gpu/power_w": 96.15, "gpu/temp_c": 38.0},
+    {"step": 4, "epoch": 0, "loss": 0.0, "tokens": 95, "advantage_mean": 0.0, "step_time_s": 1.634020808999594, "gpu/allocated_gb": 1.4681, "gpu/mem_used_mb": 2558.0, "gpu/util_pct": 14.0, "gpu/power_w": 101.14, "gpu/temp_c": 37.0},
+    {"step": 5, "epoch": 0, "loss": -1.375, "tokens": 256, "advantage_mean": -0.9999966621398926, "step_time_s": 1.8268011069999375, "gpu/allocated_gb": 1.5439, "gpu/mem_used_mb": 2926.0, "gpu/util_pct": 9.0, "gpu/power_w": 112.0, "gpu/temp_c": 39.0},
+    {"step": 6, "epoch": 0, "loss": 0.0, "tokens": 111, "advantage_mean": 0.0, "step_time_s": 2.0149350639999284, "gpu/allocated_gb": 1.4967, "gpu/mem_used_mb": 2928.0, "gpu/util_pct": 13.0, "gpu/power_w": 117.91, "gpu/temp_c": 39.0},
+    {"step": 7, "epoch": 0, "loss": 1.2890625, "tokens": 256, "advantage_mean": 0.9999966621398926, "step_time_s": 2.1993432869999197, "gpu/allocated_gb": 1.5439, "gpu/mem_used_mb": 2928.0, "gpu/util_pct": 18.0, "gpu/power_w": 124.76, "gpu/temp_c": 38.0},
+    {"step": 8, "epoch": 0, "loss": 0.0, "tokens": 95, "advantage_mean": 0.0, "step_time_s": 2.3883742689999963, "gpu/allocated_gb": 1.4681, "gpu/mem_used_mb": 2928.0, "gpu/util_pct": 18.0, "gpu/power_w": 126.01, "gpu/temp_c": 38.0},
+    {"step": 9, "epoch": 0, "loss": 0.0, "tokens": 113, "advantage_mean": 0.0, "step_time_s": 2.568844603999878, "gpu/allocated_gb": 1.4999, "gpu/mem_used_mb": 2928.0, "gpu/util_pct": 22.0, "gpu/power_w": 126.04, "gpu/temp_c": 38.0},
+    {"step": 10, "epoch": 0, "loss": 0.0, "tokens": 92, "advantage_mean": 0.0, "step_time_s": 2.755343971000002, "gpu/allocated_gb": 1.4912, "gpu/mem_used_mb": 2928.0, "gpu/util_pct": 25.0, "gpu/power_w": 130.16, "gpu/temp_c": 39.0},
+    {"step": 11, "epoch": 0, "loss": 1.2578125, "tokens": 256, "advantage_mean": 0.9999966621398926, "step_time_s": 2.9392999719998443, "gpu/allocated_gb": 1.5439, "gpu/mem_used_mb": 2928.0, "gpu/util_pct": 33.0, "gpu/power_w": 129.2, "gpu/temp_c": 40.0},
+    {"step": 12, "epoch": 0, "loss": 0.0, "tokens": 19, "advantage_mean": 0.0, "step_time_s": 3.1268798099999913, "gpu/allocated_gb": 1.444, "gpu/mem_used_mb": 2928.0, "gpu/util_pct": 25.0, "gpu/power_w": 127.21, "gpu/temp_c": 39.0},
+    {"step": 13, "epoch": 0, "loss": 0.0, "tokens": 19, "advantage_mean": 0.0, "step_time_s": 3.3067110939996383, "gpu/allocated_gb": 1.4679, "gpu/mem_used_mb": 2928.0, "gpu/util_pct": 20.0, "gpu/power_w": 120.19, "gpu/temp_c": 39.0},
+    {"step": 14, "epoch": 0, "loss": 1.328125, "tokens": 256, "advantage_mean": 0.9999966621398926, "step_time_s": 3.490864696999779, "gpu/allocated_gb": 1.5439, "gpu/mem_used_mb": 2928.0, "gpu/util_pct": 20.0, "gpu/power_w": 123.42, "gpu/temp_c": 38.0},
+    {"step": 15, "epoch": 0, "loss": 0.0, "tokens": 19, "advantage_mean": 0.0, "step_time_s": 3.670649057999981, "gpu/allocated_gb": 1.4679, "gpu/mem_used_mb": 2928.0, "gpu/util_pct": 22.0, "gpu/power_w": 123.25, "gpu/temp_c": 38.0},
+    {"step": 16, "epoch": 0, "loss": 0.0, "tokens": 112, "advantage_mean": 0.0, "step_time_s": 3.863284304999979, "gpu/allocated_gb": 1.4757, "gpu/mem_used_mb": 2932.0, "gpu/util_pct": 12.0, "gpu/power_w": 123.4, "gpu/temp_c": 39.0},
+    {"step": 17, "epoch": 0, "loss": 0.0, "tokens": 117, "advantage_mean": 0.0, "step_time_s": 4.0509689329996945, "gpu/allocated_gb": 1.4984, "gpu/mem_used_mb": 2932.0, "gpu/util_pct": 10.0, "gpu/power_w": 116.9, "gpu/temp_c": 39.0},
+    {"step": 18, "epoch": 0, "loss": -1.296875, "tokens": 256, "advantage_mean": -0.9999966621398926, "step_time_s": 4.2314360849995865, "gpu/allocated_gb": 1.5439, "gpu/mem_used_mb": 2932.0, "gpu/util_pct": 13.0, "gpu/power_w": 121.52, "gpu/temp_c": 40.0},
+    {"step": 19, "epoch": 0, "loss": 0.0, "tokens": 138, "advantage_mean": 0.0, "step_time_s": 4.419531910999922, "gpu/allocated_gb": 1.5067, "gpu/mem_used_mb": 2946.0, "gpu/util_pct": 13.0, "gpu/power_w": 125.62, "gpu/temp_c": 39.0},
+    {"step": 20, "epoch": 0, "loss": 0.0, "tokens": 56, "advantage_mean": 0.0, "step_time_s": 4.604968589999771, "gpu/allocated_gb": 1.4568, "gpu/mem_used_mb": 2946.0, "gpu/util_pct": 13.0, "gpu/power_w": 123.27, "gpu/temp_c": 38.0}
+  ],
+  "accounting": {
+    "generated_trajectories": 0,
+    "generated_tokens": 0,
+    "search_wall_time_s": 0.0,
+    "training_tokens": 2491,
+    "training_steps": 20,
+    "training_wall_time_s": 4.652959563999957,
+    "gpu_hours": null
+  }
+}

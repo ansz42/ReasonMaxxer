@@ -1,0 +1,23 @@
+{
+  "generated_trajectories": 128,
+  "generated_tokens": 13732,
+  "search_wall_time_s": 281.1831377120002,
+  "training_tokens": 0,
+  "training_steps": 0,
+  "training_wall_time_s": 0.0,
+  "gpu_hours": null,
+  "num_problems": 8,
+  "num_configs": 8,
+  "settings": {
+    "initial_samples_per_config": 1,
+    "total_samples_per_problem": 16,
+    "exploration_fraction": 0.2,
+    "allocation_temperature": 0.5,
+    "max_tokens": 256,
+    "seed": 42,
+    "flush_every": 1
+  },
+  "generated_tokens_per_s": 48.83649891575256,
+  "correct": 124,
+  "mean_reward": 0.981
+}

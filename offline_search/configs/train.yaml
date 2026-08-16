@@ -1,0 +1,30 @@
+selection:
+  max_correct_per_problem: 8
+  max_near_correct_per_problem: 16
+  max_hard_negatives_per_problem: 32
+  max_low_reward_negatives_per_problem: 4
+
+entropy:
+  threshold: 0.8
+  scale: 0.25
+  mode: sigmoid
+
+training:
+  backend: unsloth
+  lora_rank: 16
+  lora_alpha: 32
+  lora_dropout: 0.0
+  target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+  learning_rate: 2.0e-5
+  batch_size: 1
+  gradient_accumulation_steps: 16
+  epochs: 1
+  kl_coef: 0.0
+  objective: graded_signed
+  max_grad_norm: 1.0
+  seed: 42
+  logging_steps: 5

@@ -1,3 +1,7 @@
+## AI Generated Experiment
+
+> **Warning.** This is a fork of [farukakgul/ReasonMaxxer](https://github.com/farukakgul/ReasonMaxxer) with an AI-generated experimental extension. It is **not** the official paper repository. The original ReasonMaxxer pipeline is unchanged under `reasonmaxxer/` and `scripts/`. New work lives in [`offline_search/`](offline_search/). Logged Qwen3-1.7B smoke results are in [`offline_search/experiments/qwen3_1p7b_test_pack/`](offline_search/experiments/qwen3_1p7b_test_pack/).
+
 # ReasonMaxxer
 
 **Rethinking RL for LLM Reasoning: It's Sparse Policy Selection, Not Capability Learning**
@@ -48,6 +52,30 @@ This repository provides the core pipeline used for ReasonMaxxer experiments:
 - checkpoint evaluation on held-out and benchmark sets.
 
 The repo is intentionally focused on the **ReasonMaxxer pipeline itself**. It does not include unrelated research code, RL baselines, or internal experiment management tooling.
+
+## Adaptive offline search (this fork)
+
+This fork adds a closed-loop experiment next to the paper code:
+
+```text
+8 decoding arms → graded math rewards → adaptive leftover allocation
+  → per-problem signed advantages → frozen-model token entropy
+  → entropy-weighted Unsloth LoRA → pass@1 / pass@k
+```
+
+- Code: [`offline_search/`](offline_search/)
+- Test pack: `unsloth/Qwen3-1.7B`, LoRA r=16 on QKVO, config `offline_search/configs/test_pack_qwen3_1p7b.yaml`
+- Measured run (NVIDIA L40S): 128 search rollouts, 20 LoRA steps, **pass@1 = 0.938**, **pass@4 = 1.0**, wall **465.5 s**. See [`offline_search/experiments/qwen3_1p7b_test_pack/RESULTS.md`](offline_search/experiments/qwen3_1p7b_test_pack/RESULTS.md).
+- W&B project: [batuhan409/offline-search](https://wandb.ai/batuhan409/offline-search)
+
+```bash
+cd offline_search
+pip install -r requirements-test.txt
+python -m pytest tests
+# GPU smoke (needs CUDA + Unsloth):
+pip install -r requirements.txt
+python examples/qwen3_1p7b/run_test_pack.py --mode smoke
+```
 
 ## Repository structure
 

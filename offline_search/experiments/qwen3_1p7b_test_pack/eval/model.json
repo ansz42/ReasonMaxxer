@@ -1,0 +1,19 @@
+{
+  "macro": {
+    "pass@1": 0.9375,
+    "pass@4": 1.0
+  },
+  "micro_correct_rate": 0.9375,
+  "num_problems": 8,
+  "n_samples": 4,
+  "per_problem": [
+    {"problem_id": "arith/add-17-28", "n": 4, "n_correct": 4, "mean_reward": 1.0, "metrics": {"pass@1": 1.0, "pass@4": 1.0}},
+    {"problem_id": "arith/mul-12-8", "n": 4, "n_correct": 4, "mean_reward": 1.0, "metrics": {"pass@1": 1.0, "pass@4": 1.0}},
+    {"problem_id": "arith/frac-3-4-plus-1-8", "n": 4, "n_correct": 4, "mean_reward": 1.0, "metrics": {"pass@1": 1.0, "pass@4": 1.0}},
+    {"problem_id": "word/apples", "n": 4, "n_correct": 4, "mean_reward": 1.0, "metrics": {"pass@1": 1.0, "pass@4": 1.0}},
+    {"problem_id": "word/remainder", "n": 4, "n_correct": 4, "mean_reward": 1.0, "metrics": {"pass@1": 1.0, "pass@4": 1.0}},
+    {"problem_id": "word/percent", "n": 4, "n_correct": 4, "mean_reward": 1.0, "metrics": {"pass@1": 1.0, "pass@4": 1.0}},
+    {"problem_id": "word/work-rate", "n": 4, "n_correct": 2, "mean_reward": 0.7, "metrics": {"pass@1": 0.5, "pass@4": 1.0}},
+    {"problem_id": "word/linear", "n": 4, "n_correct": 4, "mean_reward": 1.0, "metrics": {"pass@1": 1.0, "pass@4": 1.0}}
+  ]
+}

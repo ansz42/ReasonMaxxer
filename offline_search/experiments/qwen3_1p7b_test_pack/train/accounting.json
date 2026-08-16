@@ -1,0 +1,9 @@
+{
+  "generated_trajectories": 0,
+  "generated_tokens": 0,
+  "search_wall_time_s": 0.0,
+  "training_tokens": 2491,
+  "training_steps": 20,
+  "training_wall_time_s": 4.652959563999957,
+  "gpu_hours": null
+}

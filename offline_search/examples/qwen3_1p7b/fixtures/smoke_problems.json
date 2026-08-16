@@ -1,0 +1,60 @@
+{
+  "records": [
+    {
+      "problem_id": "arith/add-17-28",
+      "problem_text": "Compute 17 + 28.",
+      "ground_truth": "45",
+      "category": "arithmetic",
+      "difficulty": "easy"
+    },
+    {
+      "problem_id": "arith/mul-12-8",
+      "problem_text": "Compute 12 * 8.",
+      "ground_truth": "96",
+      "category": "arithmetic",
+      "difficulty": "easy"
+    },
+    {
+      "problem_id": "arith/frac-3-4-plus-1-8",
+      "problem_text": "Compute 3/4 + 1/8. Give the answer as a simplified fraction.",
+      "ground_truth": "7/8",
+      "category": "arithmetic",
+      "difficulty": "easy"
+    },
+    {
+      "problem_id": "word/apples",
+      "problem_text": "Maya has 14 apples. She gives 5 to a friend and then buys 8 more. How many apples does she have now?",
+      "ground_truth": "17",
+      "category": "word",
+      "difficulty": "easy"
+    },
+    {
+      "problem_id": "word/remainder",
+      "problem_text": "What is the remainder when 100 is divided by 7?",
+      "ground_truth": "2",
+      "category": "arithmetic",
+      "difficulty": "medium"
+    },
+    {
+      "problem_id": "word/percent",
+      "problem_text": "A jacket costs $80. It is discounted by 25 percent. What is the sale price in dollars?",
+      "ground_truth": "60",
+      "category": "word",
+      "difficulty": "medium"
+    },
+    {
+      "problem_id": "word/work-rate",
+      "problem_text": "Pipe A fills a tank in 6 hours. Pipe B fills the same tank in 3 hours. How many hours do they take working together?",
+      "ground_truth": "2",
+      "category": "word",
+      "difficulty": "harder"
+    },
+    {
+      "problem_id": "word/linear",
+      "problem_text": "Solve for x: 3x + 5 = 20.",
+      "ground_truth": "5",
+      "category": "algebra",
+      "difficulty": "easy"
+    }
+  ]
+}

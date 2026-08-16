@@ -1,0 +1,10 @@
+# Lightweight CPU stack for unit tests. Install with:
+#   .venv\Scripts\python -m pip install -r requirements-test.txt
+numpy>=1.26
+pytest>=8.0
+pyyaml>=6.0
+pandas>=2.2
+pyarrow>=16.0
+tqdm>=4.66
+# Optional: a working torch enables the tiny-LM sign tests.
+# Do not install a broken Windows CPU wheel into this venv.

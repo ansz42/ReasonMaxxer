@@ -1,0 +1,33 @@
+model:
+  name: unsloth/Qwen3-1.7B
+  max_seq_length: 2048
+  load_in_4bit: true
+  enable_thinking: false
+  prompt_style: qwen3_chat
+  backend: unsloth
+
+search:
+  initial_samples_per_config: 16
+  total_samples_per_problem: 256
+  exploration_fraction: 0.20
+  allocation_temperature: 0.5
+  max_tokens: 1024
+  seed: 42
+  configs:
+    - temperature: 0.35
+      top_p: 0.90
+    - temperature: 0.50
+      top_p: 0.95
+    - temperature: 0.70
+      top_p: 0.95
+    - temperature: 0.80
+      top_p: 1.00
+    - temperature: 1.00
+      top_p: 0.95
+    - temperature: 1.15
+      top_p: 0.98
+    - temperature: 1.30
+      top_p: 1.00
+    - temperature: 0.85
+      top_p: 0.98
+      repetition_penalty: 1.05
