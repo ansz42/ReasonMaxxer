@@ -45,6 +45,8 @@ class SearchConfig:
     allocation_temperature: float = 0.5
     max_tokens: int = 1024
     seed: int = 42
+    backend: str | None = None
+    generation_batch_size: int = 32
     configs: list[dict[str, Any]] = field(default_factory=lambda: list(DEFAULT_SEARCH_CONFIG_SPECS))
 
     def sampling_configs(self) -> list[SamplingConfig]:
@@ -98,6 +100,7 @@ class EvaluationConfig:
     n_samples: int = 16
     max_tokens: int = 1024
     seed: int = 42
+    generation_batch_size: int | None = None
 
 
 @dataclass

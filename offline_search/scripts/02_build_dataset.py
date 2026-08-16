@@ -10,7 +10,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from offline_search.data.build_training_dataset import build_training_rows, write_training_dataset
 from offline_search.data.compute_entropy import model_entropy_fn, uniform_entropy_fn
 from offline_search.data.select_trajectories import SelectionCaps
-from offline_search.runtime import load_experiment, load_generation_stack
+from offline_search.runtime import load_experiment, load_torch_stack
 from offline_search.search.resume import load_jsonl
 from offline_search.utils.tracking import finish, gpu_snapshot, init_from_config, log as wandb_log
 
@@ -40,7 +40,7 @@ def main() -> None:
         tokenizer = CharTokenizer()
         entropy_fn = lambda ids: uniform_entropy_fn(ids, 1.0)
     else:
-        model, tokenizer, _ = load_generation_stack(cfg)
+        model, tokenizer = load_torch_stack(cfg)
         device = None
         try:
             device = str(next(model.parameters()).device)

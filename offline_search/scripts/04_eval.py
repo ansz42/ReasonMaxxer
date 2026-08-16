@@ -38,6 +38,7 @@ def main() -> None:
         seed=cfg.evaluation.seed,
         ks=cfg.evaluation.pass_k,
         output_path=output,
+        generation_batch_size=cfg.evaluation.generation_batch_size or cfg.search.generation_batch_size,
     )
     payload = {f"eval/{k}": v for k, v in report.get("macro", {}).items()}
     payload["eval/micro_correct_rate"] = report.get("micro_correct_rate")

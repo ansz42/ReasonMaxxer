@@ -9,7 +9,7 @@ Practical MVP from `reasonmaxxer_offline_codex_handover.md`:
 3. Adaptive leftover-budget allocation
 4. Per-problem signed advantages
 5. Frozen-model token entropy
-6. Entropy-weighted LoRA (Unsloth on Qwen3-1.7B for the test pack)
+6. Entropy-weighted LoRA (Unsloth; Qwen3-1.7B smoke, Qwen2.5-3B MATH-500 test)
 7. pass@1 / pass@k + token accounting
 
 Search and training share one chat-template prefix: generation renders
@@ -46,12 +46,28 @@ python examples\qwen3_1p7b\run_test_pack.py --mode smoke
 
 See `examples/qwen3_1p7b/README.md`.
 
+Harder follow-up (300 random `HuggingFaceH4/MATH-500["test"]` items, vLLM batched search, last-2-line regex, Unsloth LoRA):
+
+```powershell
+python scripts\sample_math500.py
+python examples\qwen25_3b\run_test_pack.py --mode unit
+python examples\qwen25_3b\run_test_pack.py --mode smoke
+```
+
+- model: `unsloth/Qwen2.5-3B-Instruct`
+- trainer: Unsloth LoRA, rank 16, QKVO
+- config: `configs/test_pack_qwen25_3b.yaml`
+- fixtures: `examples/qwen25_3b/fixtures/math500_300.json`
+
+See `examples/qwen25_3b/README.md`.
+
 ## Layout
 
 ```text
-configs/          search / train / eval / Qwen3 test-pack YAML
+configs/          search / train / eval / test-pack YAML
 src/offline_search/
-scripts/          01_search  02_build_dataset  03_train  04_eval
+scripts/          01_search  02_build_dataset  03_train  04_eval  sample_math500
 tests/            CPU unit suite (no model download)
 examples/qwen3_1p7b/
+examples/qwen25_3b/
 ```

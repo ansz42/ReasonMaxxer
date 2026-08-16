@@ -1,0 +1,94 @@
+# Qwen2.5-3B-Instruct LoRA + Unsloth test pack on 300 random MATH-500 items.
+# Search uses vLLM batched generation. Training still attaches Unsloth LoRA.
+
+problems_file: examples/qwen25_3b/fixtures/math500_300.json
+output_dir: outputs/qwen25_3b_math500_300
+
+model:
+  name: unsloth/Qwen2.5-3B-Instruct
+  max_seq_length: 8192
+  load_in_4bit: true
+  enable_thinking: false
+  prompt_style: qwen3_chat
+  backend: unsloth
+
+search:
+  # 8 arms x 1 initial = 8, then 4 leftover so adaptive allocation still runs.
+  backend: vllm
+  generation_batch_size: 32
+  initial_samples_per_config: 1
+  total_samples_per_problem: 12
+  exploration_fraction: 0.20
+  allocation_temperature: 0.5
+  max_tokens: 3000
+  seed: 42
+  configs:
+    - temperature: 0.35
+      top_p: 0.90
+    - temperature: 0.50
+      top_p: 0.95
+    - temperature: 0.70
+      top_p: 0.95
+    - temperature: 0.80
+      top_p: 1.00
+    - temperature: 1.00
+      top_p: 0.95
+    - temperature: 1.15
+      top_p: 0.98
+    - temperature: 1.30
+      top_p: 1.00
+    - temperature: 0.85
+      top_p: 0.98
+      repetition_penalty: 1.05
+
+selection:
+  max_correct_per_problem: 4
+  max_near_correct_per_problem: 4
+  max_hard_negatives_per_problem: 4
+  max_low_reward_negatives_per_problem: 2
+
+entropy:
+  threshold: 0.8
+  scale: 0.25
+  mode: sigmoid
+
+training:
+  backend: unsloth
+  lora_rank: 16
+  lora_alpha: 32
+  lora_dropout: 0.0
+  target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+  learning_rate: 2.0e-4
+  batch_size: 1
+  gradient_accumulation_steps: 4
+  epochs: 1
+  max_steps: 200
+  drop_zero_advantage: true
+  min_abs_advantage: 1.0e-8
+  cover_all_informative: true
+  kl_coef: 0.0
+  objective: graded_signed
+  max_grad_norm: 1.0
+  seed: 42
+  logging_steps: 1
+
+evaluation:
+  pass_k:
+    - 1
+    - 4
+  temperature: 0.6
+  top_p: 0.95
+  n_samples: 4
+  max_tokens: 3000
+  generation_batch_size: 32
+  seed: 42
+
+wandb:
+  enabled: true
+  project: offline-search
+  name: qwen25-3b-math500-300
+  group: qwen25-3b-math500

@@ -1,7 +1,12 @@
 from __future__ import annotations
 
 from offline_search.scoring.exact_match import ExactMatchScorer
-from offline_search.scoring.math_verifier import MathVerifier, extract_boxed_answer
+from offline_search.scoring.math_verifier import (
+    MathVerifier,
+    answers_match,
+    extract_boxed_answer,
+    extract_math_answer,
+)
 
 
 def test_boxed_extraction():
@@ -34,3 +39,45 @@ def test_math_verifier_accepts_latex_frac():
     assert boxed.is_correct and boxed.reward == 1.0
     slash = scorer.score_rollout("q", r"\boxed{7/8}", r"\frac{7}{8}")
     assert slash.is_correct
+
+
+def test_extracts_from_last_two_lines_not_earlier_numbers():
+    text = (
+        "I first compute 17 + 28 = 45.\n"
+        "That 45 is only an intermediate check.\n"
+        "The answer is 12\n"
+        "I mentioned 45 earlier as a sanity check."
+    )
+    assert extract_math_answer(text) == "12"
+    scorer = MathVerifier()
+    result = scorer.score_rollout("q", text, "12")
+    assert result.is_correct and result.reward == 1.0
+
+
+def test_extracts_unboxed_frac_from_final_answer_line():
+    text = "I cancelled a 99 along the way.\nFinal answer: $\\frac{1}{2}$"
+    extracted = extract_math_answer(text)
+    assert answers_match(extracted, "1/2")
+    scorer = MathVerifier()
+    assert scorer.score_rollout("q", text, r"\frac{1}{2}").is_correct
+
+
+def test_extracts_bare_last_line_expression():
+    text = "After simplifying we obtain\n7/8"
+    extracted = extract_math_answer(text)
+    assert answers_match(extracted, "7/8")
+
+
+def test_prefers_last_two_line_boxed_over_earlier_boxed():
+    text = "A first guess is \\boxed{9}.\nLater correction.\nSo \\boxed{4}"
+    assert extract_math_answer(text) == "4"
+
+
+def test_ignores_trailing_asy_diagram_after_boxed():
+    text = (
+        "The perimeter is $2(21)=\\boxed{42}$ inches.\n\n"
+        "[asy]\n"
+        "draw(dir(60*i)--dir(60*(i+3)));\n"
+        "[/asy]"
+    )
+    assert extract_math_answer(text) == "42"

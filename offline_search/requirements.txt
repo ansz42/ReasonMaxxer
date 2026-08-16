@@ -14,7 +14,10 @@ safetensors>=0.4
 sentencepiece>=0.2
 bitsandbytes>=0.43
 
-# Test-pack trainer (Qwen3-1.7B LoRA)
+# Search / eval generation (MATH-500 pack)
+vllm
+
+# Test-pack trainer (Unsloth LoRA)
 # Install after torch, from the Unsloth docs for your CUDA version:
 #   pip install unsloth
 unsloth

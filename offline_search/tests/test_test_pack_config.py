@@ -20,3 +20,24 @@ def test_qwen3_test_pack_is_unsloth_lora():
     assert len(cfg.search.sampling_configs()) == 8
     problems = ROOT / cfg.problems_file
     assert problems.exists()
+
+
+def test_qwen25_3b_test_pack_is_unsloth_lora_math500():
+    cfg = ExperimentConfig.from_yaml(ROOT / "configs" / "test_pack_qwen25_3b.yaml")
+    assert cfg.model.name == "unsloth/Qwen2.5-3B-Instruct"
+    assert cfg.training.backend == "unsloth"
+    assert cfg.training.lora_rank == 16
+    assert cfg.training.target_modules == ["q_proj", "k_proj", "v_proj", "o_proj"]
+    assert cfg.training.objective == "graded_signed"
+    assert cfg.training.drop_zero_advantage is True
+    assert cfg.training.cover_all_informative is True
+    assert cfg.search.backend == "vllm"
+    assert cfg.search.total_samples_per_problem == 12
+    assert cfg.search.max_tokens == 3000
+    assert cfg.search.generation_batch_size >= 8
+    assert cfg.evaluation.max_tokens == 3000
+    assert len(cfg.search.sampling_configs()) == 8
+    problems = ROOT / cfg.problems_file
+    assert problems.exists()
+    payload = problems.read_text(encoding="utf-8")
+    assert '"n": 300' in payload or '"num_records": 300' in payload

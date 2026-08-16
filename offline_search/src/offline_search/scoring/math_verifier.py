@@ -9,6 +9,25 @@ from offline_search.scoring.base import ScoreResult
 
 BOXED_RE = re.compile(r"\\boxed\s*\{")
 NUMBER_RE = re.compile(r"(?<![A-Za-z_])-?\d+(?:,\d{3})*(?:\.\d+)?(?:[eE][+-]?\d+)?(?![A-Za-z_])")
+# Only the last couple of lines are treated as the answer region. Intermediate
+# arithmetic in the writeup is ignored so we can parse that tail more freely.
+TAIL_LINE_COUNT = 2
+ANSWER_CUE_RE = re.compile(
+    r"(?:"
+    r"final\s+answer(?:\s+is)?"
+    r"|the\s+answer\s+is"
+    r"|answer\s*(?:is|:)"
+    r"|thus,?\s+(?:the\s+)?answer(?:\s+is)?"
+    r"|therefore,?\s+(?:the\s+)?answer(?:\s+is)?"
+    r"|so,?\s+the\s+answer(?:\s+is)?"
+    r")\s*[:\-]?\s*(.+)$",
+    re.IGNORECASE | re.MULTILINE,
+)
+DOLLAR_MATH_RE = re.compile(r"\$\$(.+?)\$\$|\$(.+?)\$", re.DOTALL)
+LATEX_FRAC_RE = re.compile(r"\\(?:d|t|c)?frac\s*\{([^{}]+)\}\s*\{([^{}]+)\}")
+SLASH_FRAC_RE = re.compile(r"(?<![A-Za-z0-9.])-?\d+\s*/\s*-?\d+(?![A-Za-z0-9.])")
+PROSE_WORD_RE = re.compile(r"(?<!\\)[A-Za-z]{3,}")
+ASY_BLOCK_RE = re.compile(r"\[asy\].*?\[/asy\]", re.IGNORECASE | re.DOTALL)
 
 
 def _extract_braced_group(text: str, start: int) -> str | None:
@@ -36,6 +55,15 @@ def extract_boxed_answer(text: str) -> str | None:
     return None
 
 
+def last_nonempty_lines(text: str, n: int = TAIL_LINE_COUNT) -> str:
+    lines = [line.strip() for line in (text or "").splitlines() if line.strip()]
+    return "\n".join(lines[-max(1, int(n)) :])
+
+
+def strip_diagrams(text: str) -> str:
+    return ASY_BLOCK_RE.sub("", text or "")
+
+
 def extract_final_number(text: str) -> str | None:
     if not text:
         return None
@@ -50,11 +78,84 @@ def extract_final_number(text: str) -> str | None:
     return None
 
 
-def extract_math_answer(text: str) -> str | None:
+def _latex_frac_to_slash(text: str) -> str | None:
+    match = LATEX_FRAC_RE.search(text)
+    if not match:
+        return None
+    return f"{match.group(1).strip()}/{match.group(2).strip()}"
+
+
+def _cleanup_candidate(raw: str | None) -> str | None:
+    if raw is None:
+        return None
+    text = raw.strip().strip(" .,:;")
+    if not text:
+        return None
+    if text.startswith("$$") and text.endswith("$$") and len(text) > 4:
+        text = text[2:-2].strip()
+    text = text.strip("$").strip()
     boxed = extract_boxed_answer(text)
     if boxed:
+        return boxed.strip()
+    frac = _latex_frac_to_slash(text)
+    if frac:
+        return frac
+    slash = SLASH_FRAC_RE.search(text)
+    if slash:
+        return slash.group(0).replace(" ", "")
+    if PROSE_WORD_RE.search(text):
+        first = NUMBER_RE.search(text)
+        if first:
+            return first.group(0).replace(",", "")
+        return None
+    return text or None
+
+
+def extract_from_region(region: str) -> str | None:
+    if not region or not region.strip():
+        return None
+
+    boxed = extract_boxed_answer(region)
+    if boxed:
         return boxed
-    return extract_final_number(text)
+
+    cues = list(ANSWER_CUE_RE.finditer(region))
+    if cues:
+        candidate = _cleanup_candidate(cues[-1].group(1))
+        if candidate:
+            return candidate
+
+    dollars: list[str] = []
+    for match in DOLLAR_MATH_RE.finditer(region):
+        inner = match.group(1) if match.group(1) is not None else match.group(2)
+        if inner and "\n" not in inner:
+            dollars.append(inner)
+    if dollars:
+        candidate = _cleanup_candidate(dollars[-1])
+        if candidate:
+            return candidate
+
+    frac = None
+    for match in LATEX_FRAC_RE.finditer(region):
+        frac = f"{match.group(1).strip()}/{match.group(2).strip()}"
+    if frac:
+        return frac
+
+    slashes = SLASH_FRAC_RE.findall(region)
+    if slashes:
+        return slashes[-1].replace(" ", "")
+
+    return extract_final_number(region)
+
+
+def extract_math_answer(text: str) -> str | None:
+    if not text:
+        return None
+    cleaned = strip_diagrams(text)
+    boxed = extract_boxed_answer(cleaned) or extract_boxed_answer(text)
+    if boxed:
+        return boxed
+    return extract_from_region(last_nonempty_lines(cleaned, TAIL_LINE_COUNT))
 
 
 def normalize_answer(answer: str | None) -> str | None:

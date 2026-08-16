@@ -23,26 +23,43 @@ def evaluate_backend(
     seed: int = 42,
     ks: Sequence[int] | None = None,
     output_path: str | Path | None = None,
+    generation_batch_size: int = 32,
 ) -> dict[str, Any]:
     ks = list(ks or [1, 4, 16])
     per_problem: list[dict[str, Any]] = []
     all_flags: list[bool] = []
+    problem_list = list(problems)
+    tasks: list[tuple[int, Problem, int]] = []
+    for problem in problem_list:
+        for i in range(int(n_samples)):
+            tasks.append((stable_seed("eval", problem.problem_id, i, base=seed), problem, i))
 
-    for problem in problems:
+    texts = [""] * len(tasks)
+    batch_size = max(1, int(generation_batch_size))
+    for start in range(0, len(tasks), batch_size):
+        chunk = tasks[start : start + batch_size]
+        outputs = backend.generate(
+            [problem.prompt for _, problem, _ in chunk],
+            temperature=temperature,
+            top_p=top_p,
+            n=1,
+            max_tokens=max_tokens,
+            seed=chunk[0][0],
+            seeds=[sample_seed for sample_seed, _, _ in chunk],
+        )
+        if len(outputs) != len(chunk):
+            raise RuntimeError(f"backend returned {len(outputs)} rows for {len(chunk)} eval prompts")
+        for offset, rows in enumerate(outputs):
+            texts[start + offset] = rows[0].text
+
+    cursor = 0
+    for problem in problem_list:
         flags: list[bool] = []
         rewards: list[float] = []
         responses: list[str] = []
-        for i in range(int(n_samples)):
-            sample_seed = stable_seed("eval", problem.problem_id, i, base=seed)
-            outputs = backend.generate(
-                [problem.prompt],
-                temperature=temperature,
-                top_p=top_p,
-                n=1,
-                max_tokens=max_tokens,
-                seed=sample_seed,
-            )
-            text = outputs[0][0].text
+        for _ in range(int(n_samples)):
+            text = texts[cursor]
+            cursor += 1
             score = scorer.score_rollout(problem.prompt, text, problem.reference_answer)
             flags.append(bool(score.is_correct))
             rewards.append(float(score.reward))

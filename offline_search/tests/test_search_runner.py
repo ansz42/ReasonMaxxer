@@ -66,3 +66,22 @@ def test_adaptive_stage_prefers_better_config(tmp_path):
         counts[rec["sampling_config_id"]] += 1
     assert sum(counts.values()) == 8
     assert counts["hot"] > counts["cold"]
+
+
+def test_search_batches_jobs_that_share_sampling_params(tmp_path):
+    problems = [Problem(f"p{i}", f"prompt-{i}", "1") for i in range(6)]
+    configs = [SamplingConfig("hot", temperature=0.8, top_p=1.0)]
+    settings = SearchSettings(
+        initial_samples_per_config=1,
+        total_samples_per_problem=1,
+        generation_batch_size=4,
+        seed=0,
+        max_tokens=8,
+    )
+    backend = ScriptedBackend()
+    result = run_search(problems, configs, backend, MathVerifier(), tmp_path / "batch", settings)
+    assert len(result["records"]) == 6
+    sizes = [len(call["prompts"]) for call in backend.calls]
+    assert sizes == [4, 2]
+    assert all(call["n"] == 1 for call in backend.calls)
+    assert all(call.get("seeds") and len(call["seeds"]) == len(call["prompts"]) for call in backend.calls)

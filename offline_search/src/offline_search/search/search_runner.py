@@ -51,6 +51,7 @@ class SearchSettings:
     max_tokens: int = 1024
     seed: int = 42
     flush_every: int = 1
+    generation_batch_size: int = 32
 
 
 def _config_stats(records: Sequence[dict[str, Any]]) -> dict[str, dict[str, float]]:
@@ -150,6 +151,41 @@ def plan_adaptive_jobs(
     return jobs
 
 
+def _chunks(items: Sequence[SearchJob], size: int) -> list[list[SearchJob]]:
+    step = max(1, int(size))
+    return [list(items[i : i + step]) for i in range(0, len(items), step)]
+
+
+def _sampling_key(job: SearchJob) -> tuple[float, float, int | None, float]:
+    return (job.temperature, job.top_p, job.top_k, job.repetition_penalty)
+
+
+def _record_from_result(job: SearchJob, result: Any, scorer: RolloutScorer) -> dict[str, Any]:
+    score = scorer.score_rollout(job.prompt, result.text, job.reference_answer)
+    record = {
+        "problem_id": job.problem_id,
+        "prompt": job.prompt,
+        "reference_answer": job.reference_answer,
+        "sampling_config_id": job.sampling_config_id,
+        "temperature": job.temperature,
+        "top_p": job.top_p,
+        "top_k": job.top_k,
+        "repetition_penalty": job.repetition_penalty,
+        "seed": job.seed,
+        "sample_index": job.sample_index,
+        "response": result.text,
+        "reward": float(score.reward),
+        "is_correct": bool(score.is_correct),
+        "near_correct": bool(score.near_correct),
+        "generated_tokens": int(result.num_tokens),
+        "metadata": score.metadata,
+    }
+    rendered = (result.extra or {}).get("rendered_prompt")
+    if rendered is not None:
+        record["rendered_prompt"] = rendered
+    return record
+
+
 def _execute_jobs(
     jobs: Sequence[SearchJob],
     backend: GenerationBackend,
@@ -161,47 +197,33 @@ def _execute_jobs(
     on_record: Callable[[dict[str, Any], SearchAccounting], None] | None = None,
 ) -> list[dict[str, Any]]:
     written: list[dict[str, Any]] = []
-    pending = list(jobs)
-    # Execute one completion per job so seeds stay unique and resume keys stay stable.
-    for job in pending:
-        outputs = backend.generate(
-            [job.prompt],
-            temperature=job.temperature,
-            top_p=job.top_p,
-            n=1,
-            max_tokens=settings.max_tokens,
-            seed=job.seed,
-            top_k=job.top_k,
-            repetition_penalty=job.repetition_penalty,
-        )
-        result = outputs[0][0]
-        score = scorer.score_rollout(job.prompt, result.text, job.reference_answer)
-        record = {
-            "problem_id": job.problem_id,
-            "prompt": job.prompt,
-            "reference_answer": job.reference_answer,
-            "sampling_config_id": job.sampling_config_id,
-            "temperature": job.temperature,
-            "top_p": job.top_p,
-            "top_k": job.top_k,
-            "repetition_penalty": job.repetition_penalty,
-            "seed": job.seed,
-            "sample_index": job.sample_index,
-            "response": result.text,
-            "reward": float(score.reward),
-            "is_correct": bool(score.is_correct),
-            "near_correct": bool(score.near_correct),
-            "generated_tokens": int(result.num_tokens),
-            "metadata": score.metadata,
-        }
-        rendered = (result.extra or {}).get("rendered_prompt")
-        if rendered is not None:
-            record["rendered_prompt"] = rendered
-        append_jsonl(jsonl_path, [record])
-        accounting.add_rollout(result.num_tokens)
-        written.append(record)
-        if on_record is not None:
-            on_record(record, accounting)
+    grouped: dict[tuple[float, float, int | None, float], list[SearchJob]] = defaultdict(list)
+    for job in jobs:
+        grouped[_sampling_key(job)].append(job)
+
+    for (temperature, top_p, top_k, repetition_penalty), group in grouped.items():
+        for chunk in _chunks(group, settings.generation_batch_size):
+            outputs = backend.generate(
+                [job.prompt for job in chunk],
+                temperature=temperature,
+                top_p=top_p,
+                n=1,
+                max_tokens=settings.max_tokens,
+                seed=chunk[0].seed,
+                seeds=[job.seed for job in chunk],
+                top_k=top_k,
+                repetition_penalty=repetition_penalty,
+            )
+            if len(outputs) != len(chunk):
+                raise RuntimeError(f"backend returned {len(outputs)} rows for {len(chunk)} prompts")
+            for job, rows in zip(chunk, outputs):
+                result = rows[0]
+                record = _record_from_result(job, result, scorer)
+                append_jsonl(jsonl_path, [record])
+                accounting.add_rollout(result.num_tokens)
+                written.append(record)
+                if on_record is not None:
+                    on_record(record, accounting)
     return written
 
 
