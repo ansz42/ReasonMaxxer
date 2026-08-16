@@ -49,7 +49,7 @@ Smoke budget (see `configs/test_pack_qwen3_1p7b.yaml`):
 | problems | 8 fixtures in `fixtures/smoke_problems.json` |
 | search | 8 configs x 2 initial, 8 total / problem, 256 tokens |
 | LoRA | r=16, alpha=32, QKVO, dropout 0 |
-| train | 20 steps, lr `2e-4`, Unsloth |
+| train | 20 steps on **nonzero-advantage** rows, lr `2e-4`, Unsloth |
 | eval | pass@1 and pass@4, n=4 |
 
 Research-scale knobs live in `configs/search.yaml` and `configs/train.yaml` (256 rollouts / problem, 1 epoch).

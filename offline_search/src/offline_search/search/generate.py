@@ -90,7 +90,7 @@ class TransformersBackend:
     ) -> list[list[GenerationResult]]:
         import torch
 
-        from offline_search.prompting import apply_chat_template
+        from offline_search.prompting import render_generation_prompt
 
         torch.manual_seed(int(seed))
         if torch.cuda.is_available():
@@ -108,17 +108,20 @@ class TransformersBackend:
             except Exception:
                 pass
 
+        # Same prefix string later reused by tokenize_pair / entropy.
         rendered = [
-            apply_chat_template(self.tokenizer, prompt, enable_thinking=self.enable_thinking) for prompt in prompts
+            render_generation_prompt(self.tokenizer, prompt, enable_thinking=self.enable_thinking) for prompt in prompts
         ]
         results: list[list[GenerationResult]] = [[] for _ in prompts]
         do_sample = float(temperature) > 0
         for sample_i in range(int(n)):
+            # Chat templates already emit special tokens; do not add a second BOS.
             encoded = self.tokenizer(
                 rendered,
                 return_tensors="pt",
                 padding=True,
                 truncation=True,
+                add_special_tokens=False,
             )
             encoded = {k: v.to(device) for k, v in encoded.items()}
             gen_kwargs: dict[str, Any] = {
@@ -137,7 +140,13 @@ class TransformersBackend:
             for row_i, (seq, prompt_len) in enumerate(zip(outputs, prompt_lens)):
                 gen_ids = seq[int(prompt_len) :]
                 text = self.tokenizer.decode(gen_ids, skip_special_tokens=True)
-                results[row_i].append(GenerationResult(text=text, num_tokens=int(len(gen_ids))))
+                results[row_i].append(
+                    GenerationResult(
+                        text=text,
+                        num_tokens=int(len(gen_ids)),
+                        extra={"rendered_prompt": rendered[row_i]},
+                    )
+                )
         return results
 
 

@@ -35,6 +35,13 @@ def test_yaml_roundtrip(tmp_path):
     assert cfg.training.objective == "graded_signed"
 
 
+def test_training_defaults_drop_zero_advantage_and_cover_informative():
+    cfg = ExperimentConfig()
+    assert cfg.training.drop_zero_advantage is True
+    assert cfg.training.cover_all_informative is True
+    assert cfg.training.min_abs_advantage == 1e-8
+
+
 def test_wandb_section_optional():
     cfg = ExperimentConfig()
     assert cfg.wandb.enabled is False

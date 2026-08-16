@@ -366,6 +366,8 @@ These are likely trajectories where only one or a few decisions separate failure
 
 For each retained trajectory, run the **frozen base model** teacher-forced over the generated answer.
 
+The teacher-forced prefix **must** be the same chat-template string used at generation time (`apply_chat_template(..., add_generation_prompt=True)`), then the assistant response tokens appended to that prefix. Encoding `raw_prompt + response` as one string is a different conditional and makes the entropy uninterpretable.
+
 For generated token position `t`:
 
 ```text

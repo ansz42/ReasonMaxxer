@@ -15,6 +15,8 @@ def test_qwen3_test_pack_is_unsloth_lora():
     assert cfg.training.lora_rank == 16
     assert cfg.training.target_modules == ["q_proj", "k_proj", "v_proj", "o_proj"]
     assert cfg.training.objective == "graded_signed"
+    assert cfg.training.drop_zero_advantage is True
+    assert cfg.training.cover_all_informative is True
     assert len(cfg.search.sampling_configs()) == 8
     problems = ROOT / cfg.problems_file
     assert problems.exists()

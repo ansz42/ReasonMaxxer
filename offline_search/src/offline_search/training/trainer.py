@@ -35,6 +35,32 @@ class TrainSettings:
     seed: int = 42
     logging_steps: int = 5
     kl_coef: float = 0.0
+    drop_zero_advantage: bool = True
+    min_abs_advantage: float = 1e-8
+    cover_all_informative: bool = True
+
+
+def filter_informative_rows(
+    rows: Sequence[dict[str, Any]],
+    *,
+    min_abs_advantage: float = 1e-8,
+    drop_zero_advantage: bool = True,
+) -> list[dict[str, Any]]:
+    if not drop_zero_advantage:
+        return list(rows)
+    eps = float(min_abs_advantage)
+    return [r for r in rows if abs(float(r.get("advantage", 0.0))) > eps]
+
+
+def resolve_max_steps(n_rows: int, settings: TrainSettings) -> int | None:
+    """Keep a configured cap, but never stop before one pass over informative rows."""
+    batch = max(1, int(settings.batch_size))
+    one_pass = (max(0, int(n_rows)) + batch - 1) // batch
+    if settings.cover_all_informative and n_rows > 0:
+        if settings.max_steps is None:
+            return None
+        return max(int(settings.max_steps), one_pass)
+    return settings.max_steps
 
 
 def _pad_batch(rows: Sequence[dict[str, Any]], pad_id: int = 0) -> dict[str, Any]:
@@ -84,8 +110,19 @@ def train_signed_entropy(
     import torch
 
     settings = settings or TrainSettings()
-    if not rows:
+    incoming = list(rows)
+    if not incoming:
         raise ValueError("No training rows")
+    rows = filter_informative_rows(
+        incoming,
+        min_abs_advantage=settings.min_abs_advantage,
+        drop_zero_advantage=settings.drop_zero_advantage,
+    )
+    if not rows:
+        raise ValueError(
+            "No training rows with |advantage| > "
+            f"{settings.min_abs_advantage}; all {len(incoming)} rows were no-ops"
+        )
     _set_seed(settings.seed)
     device = next(model.parameters()).device
     model.train()
@@ -98,7 +135,7 @@ def train_signed_entropy(
     optimizer.zero_grad(set_to_none=True)
     t0 = time.perf_counter()
 
-    max_steps = settings.max_steps
+    max_steps = resolve_max_steps(len(rows), settings)
     for epoch in range(int(settings.epochs)):
         for batch_rows in _iter_batches(rows, settings.batch_size, settings.seed + epoch):
             batch = _pad_batch(batch_rows, pad_id=pad_id)
@@ -155,6 +192,10 @@ def train_signed_entropy(
     result = {
         "steps": global_step,
         "logs": logs,
+        "num_rows_in": len(incoming),
+        "num_rows": len(rows),
+        "num_rows_dropped": len(incoming) - len(rows),
+        "max_steps_effective": max_steps,
         "accounting": accounting.to_dict(),
     }
     if output_dir is not None:

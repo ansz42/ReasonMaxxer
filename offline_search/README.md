@@ -12,6 +12,13 @@ Practical MVP from `reasonmaxxer_offline_codex_handover.md`:
 6. Entropy-weighted LoRA (Unsloth on Qwen3-1.7B for the test pack)
 7. pass@1 / pass@k + token accounting
 
+Search and training share one chat-template prefix: generation renders
+`<|im_start|>user ... <|im_start|>assistant` and entropy/training append the
+assistant tokens to that same prefix. Do not teacher-force the raw user
+string. Training also drops near-zero-advantage rows so a `max_steps` cap
+cannot spend most of the run on no-ops, and will extend the cap if needed
+to see every informative row once.
+
 This directory is an add-on in a fork of ReasonMaxxer. The paper pipeline under `../reasonmaxxer/` is untouched.
 
 Measured Qwen3-1.7B smoke results: [`experiments/qwen3_1p7b_test_pack/RESULTS.md`](experiments/qwen3_1p7b_test_pack/RESULTS.md).

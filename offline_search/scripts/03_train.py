@@ -69,6 +69,9 @@ def main() -> None:
         seed=t.seed,
         logging_steps=t.logging_steps,
         kl_coef=t.kl_coef,
+        drop_zero_advantage=t.drop_zero_advantage,
+        min_abs_advantage=t.min_abs_advantage,
+        cover_all_informative=t.cover_all_informative,
     )
     metrics = train_signed_entropy(model, rows, settings=settings, output_dir=output_dir)
     save_lora(model, str(output_dir / "adapter"))
@@ -77,6 +80,10 @@ def main() -> None:
     wandb_log(
         {
             "train/steps": metrics.get("steps", 0),
+            "train/num_rows_in": metrics.get("num_rows_in", len(rows)),
+            "train/num_rows": metrics.get("num_rows"),
+            "train/num_rows_dropped": metrics.get("num_rows_dropped"),
+            "train/max_steps_effective": metrics.get("max_steps_effective"),
             "train/wall_time_s": acc.get("training_wall_time_s", 0.0),
             "train/tokens_total": acc.get("training_tokens", 0),
             "train/loss_first": losses[0] if losses else None,
@@ -86,7 +93,10 @@ def main() -> None:
         }
     )
     finish()
-    print(f"trained {metrics['steps']} steps; adapter at {output_dir / 'adapter'}")
+    print(
+        f"trained {metrics['steps']} steps on {metrics.get('num_rows')}/"
+        f"{metrics.get('num_rows_in')} informative rows; adapter at {output_dir / 'adapter'}"
+    )
     if losses:
         print(f"loss first={losses[0]:.4f} last={losses[-1]:.4f} mean={sum(losses)/len(losses):.4f}")
     print(f"train_wall_s={acc.get('training_wall_time_s')} tokens={acc.get('training_tokens')}")

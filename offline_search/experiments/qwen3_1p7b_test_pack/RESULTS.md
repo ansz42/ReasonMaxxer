@@ -98,3 +98,10 @@ Negative loss = down-weight a hard negative. Positive loss = up-weight a correct
 | word/linear | 4 | 1.00 | 1.00 |
 
 These fixtures are too easy for Qwen3-1.7B. The signed objective only fires on `work-rate`. A harder set is required to test whether rare pass@k becomes better pass@1.
+
+## Fixes after this run (not yet re-measured)
+
+Two implementation issues were fixed on `main` after this smoke. The numbers above are **pre-fix**.
+
+1. **Chat-template prefix.** Search applied `apply_chat_template` before decoding. Entropy/training tokenized `prompt` and `prompt+response` as raw strings, so token entropy was under a different conditional than the one that generated the rollout. Training sequences now reuse the generation prefix (or the stored `rendered_prompt`) and then append separately encoded assistant tokens.
+2. **Zero-advantage steps.** 15/20 train steps here had advantage 0. The trainer now drops `|advantage| <= 1e-8` rows and will raise `max_steps` if needed so every remaining informative row is seen at least once. On this fixture set that would have been 5 signed updates, not 20 mostly-empty steps.

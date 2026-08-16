@@ -44,6 +44,7 @@ def main() -> None:
             entropy_threshold=cfg.entropy.threshold,
             entropy_scale=cfg.entropy.scale,
             entropy_mode=cfg.entropy.mode,
+            enable_thinking=cfg.model.enable_thinking,
         )
         out = Path(cfg.output_dir) / "baselines" / objective
         write_training_dataset(rows, out)

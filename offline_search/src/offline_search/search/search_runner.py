@@ -194,6 +194,9 @@ def _execute_jobs(
             "generated_tokens": int(result.num_tokens),
             "metadata": score.metadata,
         }
+        rendered = (result.extra or {}).get("rendered_prompt")
+        if rendered is not None:
+            record["rendered_prompt"] = rendered
         append_jsonl(jsonl_path, [record])
         accounting.add_rollout(result.num_tokens)
         written.append(record)

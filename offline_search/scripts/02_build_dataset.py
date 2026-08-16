@@ -62,21 +62,25 @@ def main() -> None:
         entropy_threshold=cfg.entropy.threshold,
         entropy_scale=cfg.entropy.scale,
         entropy_mode=cfg.entropy.mode,
+        enable_thinking=cfg.model.enable_thinking,
     )
     paths = write_training_dataset(rows, output_dir)
     pos = sum(1 for r in rows if float(r.get("advantage", 0.0)) > 0)
     neg = sum(1 for r in rows if float(r.get("advantage", 0.0)) < 0)
+    informative = sum(1 for r in rows if abs(float(r.get("advantage", 0.0))) > 1e-8)
     wandb_log(
         {
             "dataset/num_rows": len(rows),
             "dataset/num_positive": pos,
             "dataset/num_negative": neg,
+            "dataset/num_informative": informative,
+            "dataset/num_zero_advantage": len(rows) - informative,
             "dataset/mean_reward": (sum(float(r.get("reward", 0.0)) for r in rows) / len(rows)) if rows else 0.0,
             **gpu_snapshot(),
         }
     )
     finish()
-    print(f"wrote {len(rows)} training rows to {paths['parquet']}")
+    print(f"wrote {len(rows)} training rows ({informative} informative) to {paths['parquet']}")
 
 
 if __name__ == "__main__":

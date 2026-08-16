@@ -85,6 +85,9 @@ class TrainingConfig:
     warmup_steps: int = 0
     seed: int = 42
     logging_steps: int = 5
+    drop_zero_advantage: bool = True
+    min_abs_advantage: float = 1e-8
+    cover_all_informative: bool = True
 
 
 @dataclass

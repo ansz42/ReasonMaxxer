@@ -7,6 +7,7 @@ from typing import Any, Sequence
 from offline_search.data.advantages import attach_advantages, per_problem_advantages
 from offline_search.data.compute_entropy import EntropyFn, attach_entropy_and_weights, uniform_entropy_fn
 from offline_search.data.select_trajectories import SelectionCaps, select_trajectories
+from offline_search.prompting import encode_training_sequence, uses_chat_template
 from offline_search.utils.io import records_to_parquet, write_json
 
 
@@ -62,22 +63,55 @@ class CharTokenizer:
         return "".join(chars)
 
 
-def tokenize_pair(tokenizer: Any, prompt: str, response: str) -> tuple[list[int], int]:
-    if hasattr(tokenizer, "encode") and not hasattr(tokenizer, "apply_chat_template"):
+def tokenize_pair(
+    tokenizer: Any,
+    prompt: str,
+    response: str,
+    *,
+    enable_thinking: bool = False,
+    rendered_prefix: str | None = None,
+) -> tuple[list[int], int]:
+    ids, prompt_len, _rendered = tokenize_training_example(
+        tokenizer,
+        prompt,
+        response,
+        enable_thinking=enable_thinking,
+        rendered_prefix=rendered_prefix,
+    )
+    return ids, prompt_len
+
+
+def tokenize_training_example(
+    tokenizer: Any,
+    prompt: str,
+    response: str,
+    *,
+    enable_thinking: bool = False,
+    rendered_prefix: str | None = None,
+) -> tuple[list[int], int, str]:
+    """Build the teacher-forced sequence under the same prefix as generation.
+
+    Chat-template tokenizers: encode the generation prefix, then append
+    separately encoded assistant tokens. Raw test tokenizers keep the
+    previous encode(prompt)+encode(response) behaviour.
+    """
+    if not uses_chat_template(tokenizer):
         prompt_ids = [int(x) for x in tokenizer.encode(prompt)]
         response_ids = [int(x) for x in tokenizer.encode(response)]
         if response_ids and prompt_ids and response_ids[: len(prompt_ids)] == prompt_ids:
             ids = response_ids
         else:
             ids = prompt_ids + response_ids
-        return ids, len(prompt_ids)
+        return ids, len(prompt_ids), prompt
 
-    prompt_ids = tokenizer(prompt, add_special_tokens=False)["input_ids"]
-    full_ids = tokenizer(prompt + response, add_special_tokens=False)["input_ids"]
-    if isinstance(prompt_ids, list) and prompt_ids and isinstance(prompt_ids[0], list):
-        prompt_ids = prompt_ids[0]
-        full_ids = full_ids[0]
-    return [int(x) for x in full_ids], int(len(prompt_ids))
+    ids, prompt_len, rendered = encode_training_sequence(
+        tokenizer,
+        prompt,
+        response,
+        enable_thinking=enable_thinking,
+        rendered_prefix=rendered_prefix,
+    )
+    return ids, prompt_len, rendered
 
 
 def build_training_rows(
@@ -90,6 +124,7 @@ def build_training_rows(
     entropy_threshold: float = 0.8,
     entropy_scale: float = 0.25,
     entropy_mode: str = "sigmoid",
+    enable_thinking: bool = False,
 ) -> list[dict[str, Any]]:
     selected = select_trajectories(search_records, caps or SelectionCaps())
     selected = apply_objective_rewards(selected, objective)
@@ -98,7 +133,14 @@ def build_training_rows(
 
     rows: list[dict[str, Any]] = []
     for rec in selected:
-        ids, prompt_len = tokenize_pair(tokenizer, str(rec.get("prompt", "")), str(rec.get("response", "")))
+        rendered = rec.get("rendered_prompt")
+        ids, prompt_len, rendered = tokenize_training_example(
+            tokenizer,
+            str(rec.get("prompt", "")),
+            str(rec.get("response", "")),
+            enable_thinking=enable_thinking,
+            rendered_prefix=None if rendered is None else str(rendered),
+        )
         packed = attach_entropy_and_weights(
             ids,
             prompt_len,
@@ -114,6 +156,7 @@ def build_training_rows(
                 "problem_id": rec.get("problem_id"),
                 "prompt": rec.get("prompt"),
                 "response": rec.get("response"),
+                "rendered_prompt": rendered,
                 "reward": float(rec.get("reward", 0.0)),
                 "advantage": float(rec.get("advantage", 0.0)),
                 "sampling_config_id": rec.get("sampling_config_id"),
@@ -137,6 +180,8 @@ def write_training_dataset(rows: Sequence[dict[str, Any]], output_dir: str | Pat
         "num_problems": len({str(r.get("problem_id")) for r in rows}),
         "num_positive": sum(1 for r in rows if float(r.get("advantage", 0.0)) > 0),
         "num_negative": sum(1 for r in rows if float(r.get("advantage", 0.0)) < 0),
+        "num_informative": sum(1 for r in rows if abs(float(r.get("advantage", 0.0))) > 1e-8),
+        "num_zero_advantage": sum(1 for r in rows if abs(float(r.get("advantage", 0.0))) <= 1e-8),
         "mean_reward": (sum(float(r.get("reward", 0.0)) for r in rows) / len(rows)) if rows else 0.0,
     }
     write_json(output / "dataset_stats.json", stats)
@@ -149,5 +194,7 @@ __all__ = [
     "VALID_OBJECTIVES",
     "build_training_rows",
     "per_problem_advantages",
+    "tokenize_pair",
+    "tokenize_training_example",
     "write_training_dataset",
 ]
