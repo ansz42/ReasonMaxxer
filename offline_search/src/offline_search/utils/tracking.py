@@ -2,9 +2,62 @@ from __future__ import annotations
 
 import os
 import subprocess
+from collections.abc import Mapping, Sequence
 from typing import Any
 
 _RUN: Any = None
+SEARCH_LOG_EVERY = 8
+
+
+def should_log_search_progress(step: int, every: int = SEARCH_LOG_EVERY) -> bool:
+    """True on the first rollout and every `every` rollouts after that."""
+    n = int(step)
+    interval = max(1, int(every))
+    return n > 0 and (n == 1 or n % interval == 0)
+
+
+def summarize_search_records(records: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    n = 0
+    tokens = 0
+    reward_sum = 0.0
+    correct = 0
+    for record in records:
+        n += 1
+        tokens += int(record.get("generated_tokens", 0) or 0)
+        reward_sum += float(record.get("reward", 0.0) or 0.0)
+        correct += int(bool(record.get("is_correct")))
+    return {
+        "n": n,
+        "tokens": tokens,
+        "reward_sum": reward_sum,
+        "correct": correct,
+        "reward_mean": (reward_sum / n) if n else 0.0,
+        "correct_rate": (correct / n) if n else 0.0,
+    }
+
+
+def search_progress_metrics(
+    step: int,
+    record: Mapping[str, Any],
+    *,
+    tokens: int,
+    reward_sum: float,
+    correct: int,
+    extra: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    n = max(1, int(step))
+    payload: dict[str, Any] = {
+        "search/step": int(step),
+        "search/rollouts": int(step),
+        "search/tokens": int(tokens),
+        "search/reward": float(record.get("reward", 0.0) or 0.0),
+        "search/reward_mean": float(reward_sum) / n,
+        "search/is_correct": int(bool(record.get("is_correct"))),
+        "search/correct_rate": float(correct) / n,
+    }
+    if extra:
+        payload.update(dict(extra))
+    return payload
 
 
 def gpu_snapshot() -> dict[str, Any]:

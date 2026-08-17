@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from offline_search.search.generate import ScriptedBackend, VLLMBackend
+from offline_search.search.generate import ScriptedBackend, VLLMBackend, vllm_engine_kwargs
 
 
 class _FakeCompletion:
@@ -37,6 +37,26 @@ class FakeVLLM:
             }
         )
         return [_FakeRequestOutput(f"boxed:{i}") for i, _ in enumerate(prompts)]
+
+
+def test_vllm_engine_kwargs_try_eager_off_first():
+    kwargs = vllm_engine_kwargs(
+        model_name="unsloth/Qwen2.5-3B-Instruct",
+        max_model_len=6144,
+        gpu_memory_utilization=0.5,
+    )
+    assert kwargs["max_model_len"] == 6144
+    assert kwargs["gpu_memory_utilization"] == 0.5
+    assert "enforce_eager" not in kwargs
+
+
+def test_vllm_engine_kwargs_opt_in_eager():
+    kwargs = vllm_engine_kwargs(
+        model_name="unsloth/Qwen2.5-3B-Instruct",
+        max_model_len=6144,
+        enforce_eager=True,
+    )
+    assert kwargs["enforce_eager"] is True
 
 
 def test_scripted_backend_honors_per_prompt_seeds():

@@ -43,6 +43,34 @@ def test_training_defaults_drop_zero_advantage_and_cover_informative():
     assert cfg.training.save_steps == 100
 
 
+def test_search_vllm_runtime_defaults_are_conservative():
+    cfg = ExperimentConfig()
+    assert cfg.search.gpu_memory_utilization == 0.5
+    assert cfg.search.enforce_eager is False
+
+
+def test_yaml_can_set_vllm_runtime_knobs(tmp_path):
+    path = tmp_path / "search.yaml"
+    path.write_text(
+        "\n".join(
+            [
+                "search:",
+                "  generation_batch_size: 64",
+                "  gpu_memory_utilization: 0.5",
+                "  enforce_eager: false",
+                "model:",
+                "  max_seq_length: 6144",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    cfg = ExperimentConfig.from_yaml(path)
+    assert cfg.search.generation_batch_size == 64
+    assert cfg.search.gpu_memory_utilization == 0.5
+    assert cfg.search.enforce_eager is False
+    assert cfg.model.max_seq_length == 6144
+
+
 def test_wandb_section_optional():
     cfg = ExperimentConfig()
     assert cfg.wandb.enabled is False

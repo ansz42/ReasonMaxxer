@@ -6,7 +6,7 @@ output_dir: outputs/qwen25_3b_math500_300
 
 model:
   name: unsloth/Qwen2.5-3B-Instruct
-  max_seq_length: 8192
+  max_seq_length: 6144
   load_in_4bit: true
   enable_thinking: false
   prompt_style: qwen3_chat
@@ -15,7 +15,10 @@ model:
 search:
   # 8 arms x 1 initial = 8, then 4 leftover so adaptive allocation still runs.
   backend: vllm
-  generation_batch_size: 32
+  generation_batch_size: 64
+  gpu_memory_utilization: 0.5
+  # CUDA graphs first. Flip to true only if the engine fails to start.
+  enforce_eager: false
   initial_samples_per_config: 1
   total_samples_per_problem: 12
   exploration_fraction: 0.20
@@ -67,7 +70,7 @@ training:
   gradient_accumulation_steps: 4
   epochs: 1
   max_steps: 200
-  save_steps: 100
+  save_steps: 50
   drop_zero_advantage: true
   min_abs_advantage: 1.0e-8
   cover_all_informative: true
@@ -85,7 +88,7 @@ evaluation:
   top_p: 0.95
   n_samples: 4
   max_tokens: 3000
-  generation_batch_size: 32
+  generation_batch_size: 64
   seed: 42
 
 wandb:

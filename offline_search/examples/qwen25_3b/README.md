@@ -58,9 +58,9 @@ Budget (see `configs/test_pack_qwen25_3b.yaml`):
 | --- | --- |
 | model | `unsloth/Qwen2.5-3B-Instruct` |
 | problems | 300 random MATH-500 test items |
-| search | vLLM, batch 32, 8 configs x 1 initial, **12 total / problem**, **3000 tokens** |
+| search | vLLM, batch 64, max_model_len 6144, gpu_memory_utilization 0.5, eager off, 8 configs x 1 initial, **12 total / problem**, **3000 tokens** |
 | LoRA | r=16, alpha=32, QKVO, dropout 0 |
-| train | up to 200 steps on **nonzero-advantage** rows, lr `2e-4`, Unsloth |
+| train | up to 200 steps on **nonzero-advantage** rows, lr `2e-4`, Unsloth, checkpoint every 50 |
 | eval | vLLM batched pass@1 and pass@4, n=4, 3000 tokens |
 
 300 problems x 12 rollouts is a real GPU run, not an 8-problem smoke. Research-scale knobs still live in `configs/search.yaml` (256 rollouts / problem).

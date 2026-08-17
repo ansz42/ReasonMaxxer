@@ -224,6 +224,32 @@ def _prompt_seeds(prompts: Sequence[str], seed: int, seeds: Sequence[int] | None
     return values
 
 
+def vllm_engine_kwargs(
+    *,
+    model_name: str,
+    max_model_len: int,
+    tensor_parallel_size: int = 1,
+    gpu_memory_utilization: float = 0.5,
+    enforce_eager: bool = False,
+    adapter_path: str | None = None,
+    max_lora_rank: int = 64,
+) -> dict[str, Any]:
+    """Build LLM() kwargs. Eager mode stays off unless the caller opts in."""
+    kwargs: dict[str, Any] = {
+        "model": model_name,
+        "trust_remote_code": True,
+        "max_model_len": int(max_model_len),
+        "tensor_parallel_size": int(tensor_parallel_size),
+        "gpu_memory_utilization": float(gpu_memory_utilization),
+    }
+    if enforce_eager:
+        kwargs["enforce_eager"] = True
+    if adapter_path:
+        kwargs["enable_lora"] = True
+        kwargs["max_lora_rank"] = int(max_lora_rank)
+    return kwargs
+
+
 class VLLMBackend:
     """Batched generation via vLLM. Training/entropy still use the Unsloth stack."""
 
@@ -237,7 +263,8 @@ class VLLMBackend:
         enable_thinking: bool = False,
         adapter_path: str | None = None,
         tensor_parallel_size: int = 1,
-        gpu_memory_utilization: float = 0.90,
+        gpu_memory_utilization: float = 0.5,
+        enforce_eager: bool = False,
         max_lora_rank: int = 64,
     ) -> None:
         self.enable_thinking = enable_thinking
@@ -247,17 +274,17 @@ class VLLMBackend:
                 raise ValueError("VLLMBackend needs llm= or model_name=")
             from vllm import LLM
 
-            kwargs: dict[str, Any] = {
-                "model": model_name,
-                "trust_remote_code": True,
-                "max_model_len": int(max_model_len),
-                "tensor_parallel_size": int(tensor_parallel_size),
-                "gpu_memory_utilization": float(gpu_memory_utilization),
-            }
-            if self.adapter_path:
-                kwargs["enable_lora"] = True
-                kwargs["max_lora_rank"] = int(max_lora_rank)
-            llm = LLM(**kwargs)
+            llm = LLM(
+                **vllm_engine_kwargs(
+                    model_name=model_name,
+                    max_model_len=max_model_len,
+                    tensor_parallel_size=tensor_parallel_size,
+                    gpu_memory_utilization=gpu_memory_utilization,
+                    enforce_eager=enforce_eager,
+                    adapter_path=self.adapter_path,
+                    max_lora_rank=max_lora_rank,
+                )
+            )
         self.llm = llm
         self.tokenizer = tokenizer if tokenizer is not None else self.llm.get_tokenizer()
 

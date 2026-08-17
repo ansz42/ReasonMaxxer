@@ -76,6 +76,8 @@ def load_generation_stack(cfg: ExperimentConfig, adapter_path: str | Path | None
             max_model_len=cfg.model.max_seq_length,
             enable_thinking=cfg.model.enable_thinking,
             adapter_path=str(adapter) if adapter else None,
+            gpu_memory_utilization=cfg.search.gpu_memory_utilization,
+            enforce_eager=cfg.search.enforce_eager,
         )
         return None, backend.tokenizer, backend
     if backend_name == "unsloth":

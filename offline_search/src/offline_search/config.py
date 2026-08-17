@@ -47,6 +47,8 @@ class SearchConfig:
     seed: int = 42
     backend: str | None = None
     generation_batch_size: int = 32
+    gpu_memory_utilization: float = 0.5
+    enforce_eager: bool = False
     configs: list[dict[str, Any]] = field(default_factory=lambda: list(DEFAULT_SEARCH_CONFIG_SPECS))
 
     def sampling_configs(self) -> list[SamplingConfig]:
