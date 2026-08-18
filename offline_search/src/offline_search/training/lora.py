@@ -72,20 +72,15 @@ def load_unsloth_lora(
             tokenizer.padding_side = "right"
         except Exception:
             pass
-    modules = list(target_modules or DEFAULT_TARGET_MODULES)
-    mlp_names = {"gate_proj", "up_proj", "down_proj"}
     model = FastLanguageModel.get_peft_model(
         model,
         r=int(rank),
-        target_modules=modules,
+        target_modules=list(target_modules or DEFAULT_TARGET_MODULES),
         lora_alpha=int(alpha),
         lora_dropout=float(dropout),
         bias="none",
         use_gradient_checkpointing="unsloth",
         random_state=int(seed),
-        # Unsloth's default target set includes MLP. When we omit those
-        # modules it otherwise warns that it "cannot patch MLP layers".
-        finetune_mlp_modules=bool(mlp_names.intersection(modules)),
     )
     return model, tokenizer
 
