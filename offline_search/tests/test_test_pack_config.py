@@ -58,7 +58,15 @@ def test_qwen25_1p5b_test_pack_is_qkvo_rank16_full_math500():
     assert cfg.training.backend == "unsloth"
     assert cfg.training.lora_rank == 16
     assert cfg.training.lora_alpha == 32
-    assert cfg.training.target_modules == ["q_proj", "k_proj", "v_proj", "o_proj"]
+    assert cfg.training.target_modules == [
+        "q_proj",
+        "k_proj",
+        "v_proj",
+        "o_proj",
+        "gate_proj",
+        "up_proj",
+        "down_proj",
+    ]
     assert cfg.entropy.mode == "hard"
     assert cfg.training.neg_prob_floor == 1e-4
     assert cfg.search.retry_clipped is True

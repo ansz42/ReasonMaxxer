@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import math
 
+import numpy as np
+
 from offline_search.training.loss import apply_response_mask, decision_loss, decision_loss_numpy
 from tests.conftest import import_torch_or_skip
 
@@ -135,6 +137,54 @@ def test_neg_prob_floor_leaves_positive_rows_alone():
     weights = [[1.0, 1.0]]
     out = apply_neg_prob_floor(logp, [1.0], weights, floor=1e-4)
     assert out[0] == [1.0, 1.0]
+
+
+def test_as_numpy_casts_before_numpy_for_bfloat16_like_tensors():
+    from offline_search.training.loss import _as_numpy
+
+    class _Bf16:
+        def __init__(self, allow_numpy: bool = False) -> None:
+            self.allow_numpy = allow_numpy
+
+        def detach(self):
+            return self
+
+        def float(self):
+            return _Bf16(allow_numpy=True)
+
+        def cpu(self):
+            return self
+
+        def numpy(self):
+            if not self.allow_numpy:
+                raise TypeError("Got unsupported ScalarType BFloat16")
+            return np.asarray([[-1.5, -0.25]], dtype=np.float32)
+
+    out = _as_numpy(_Bf16())
+    assert list(out[0]) == [-1.5, -0.25]
+
+
+def test_loss_diagnostics_accepts_bfloat16_like_tensors():
+    from offline_search.training.loss import loss_diagnostics
+
+    class _T:
+        def __init__(self, data) -> None:
+            self._data = np.asarray(data, dtype=np.float32)
+
+        def detach(self):
+            return self
+
+        def float(self):
+            return self
+
+        def cpu(self):
+            return self
+
+        def numpy(self):
+            return self._data
+
+    stats = loss_diagnostics(_T([[-2.0, -2.0]]), _T([1.0]), _T([[1.0, 1.0]]))
+    assert abs(stats["mean_logp_pos"] - (-2.0)) < 1e-6
 
 
 def test_loss_diagnostics_split_by_sign_and_weight_advantage():

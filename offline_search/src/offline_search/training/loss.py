@@ -140,12 +140,25 @@ def loss_diagnostics_numpy(
     }
 
 
+def _as_numpy(value: Any):
+    """Host ndarray from a tensor, casting bf16/fp16 first (numpy cannot load them)."""
+    if hasattr(value, "detach"):
+        value = value.detach()
+    if hasattr(value, "float"):
+        value = value.float()
+    if hasattr(value, "cpu"):
+        value = value.cpu()
+    if hasattr(value, "numpy"):
+        return value.numpy()
+    return value
+
+
 def loss_diagnostics(token_logprobs: Any, advantage: Any, token_weights: Any, *, eps: float = 1e-8) -> dict[str, float]:
-    if hasattr(token_logprobs, "detach"):
+    if hasattr(token_logprobs, "detach") or hasattr(token_logprobs, "numpy"):
         return loss_diagnostics_numpy(
-            token_logprobs.detach().cpu().numpy(),
-            advantage.detach().cpu().numpy() if hasattr(advantage, "detach") else advantage,
-            token_weights.detach().cpu().numpy() if hasattr(token_weights, "detach") else token_weights,
+            _as_numpy(token_logprobs),
+            _as_numpy(advantage),
+            _as_numpy(token_weights),
             eps=eps,
         )
     return loss_diagnostics_numpy(token_logprobs, advantage, token_weights, eps=eps)
