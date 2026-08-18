@@ -4,6 +4,7 @@ from pathlib import Path
 
 from offline_search.training.merge import (
     adapter_looks_complete,
+    hub_token_can_write,
     parse_checkpoint_step,
     resolve_hub_repo_id,
     resolve_latest_adapter,
@@ -52,3 +53,13 @@ def test_resolve_hub_repo_id_passthrough_and_name():
     assert resolve_hub_repo_id(name="math-test-maxx", repo_id="alice/math-test-maxx") == "alice/math-test-maxx"
     assert resolve_hub_repo_id(name="bob/math-test-maxx") == "bob/math-test-maxx"
     assert resolve_hub_repo_id(name="math-test-maxx", username="carol") == "carol/math-test-maxx"
+
+
+def test_hub_token_can_write_treats_read_role_as_false(monkeypatch):
+    import sys
+    from types import ModuleType
+
+    fake = ModuleType("huggingface_hub")
+    fake.whoami = lambda: {"name": "alice", "auth": {"accessToken": {"role": "read"}}}
+    monkeypatch.setitem(sys.modules, "huggingface_hub", fake)
+    assert hub_token_can_write() is False

@@ -30,6 +30,7 @@ def main() -> None:
     parser.add_argument("--repo-id", default=None, help="Full Hub id, e.g. user/math-test-maxx.")
     parser.add_argument("--private", action="store_true")
     parser.add_argument("--no-push", action="store_true")
+    parser.add_argument("--push-only", action="store_true", help="Upload an already-merged directory.")
     args = parser.parse_args()
 
     cfg = load_experiment(*args.config)
@@ -47,14 +48,19 @@ def main() -> None:
             **gpu_snapshot(),
         }
     )
-    print(f"merging adapter {adapter} into {cfg.model.name} -> {merged_dir}")
-    merge_adapter(
-        base_model=cfg.model.name,
-        adapter_path=adapter,
-        output_dir=merged_dir,
-        max_seq_length=cfg.model.max_seq_length,
-        load_in_4bit=cfg.model.load_in_4bit,
-    )
+    if args.push_only:
+        if not merged_dir.exists():
+            raise SystemExit(f"merged dir missing: {merged_dir}")
+        print(f"skipping merge; pushing existing {merged_dir}")
+    else:
+        print(f"merging adapter {adapter} into {cfg.model.name} -> {merged_dir}")
+        merge_adapter(
+            base_model=cfg.model.name,
+            adapter_path=adapter,
+            output_dir=merged_dir,
+            max_seq_length=cfg.model.max_seq_length,
+            load_in_4bit=cfg.model.load_in_4bit,
+        )
     write_model_card(
         merged_dir,
         repo_id=repo_id or args.name,

@@ -190,6 +190,18 @@ def _merge_with_peft(*, base_model: str, adapter_path: Path, output_dir: Path) -
     return output_dir
 
 
+def hub_token_can_write() -> bool:
+    try:
+        from huggingface_hub import whoami
+
+        info = whoami()
+        token = (info.get("auth") or {}).get("accessToken") or {}
+        role = str(token.get("role") or "").lower()
+        return role != "read"
+    except Exception:
+        return True
+
+
 def push_model_dir(
     local_dir: str | Path,
     repo_id: str,
@@ -199,6 +211,11 @@ def push_model_dir(
 ) -> str:
     from huggingface_hub import HfApi
 
+    if not hub_token_can_write():
+        raise PermissionError(
+            "Hugging Face token is read-only. Replace HF_TOKEN with a write token, then rerun "
+            "scripts/05_merge_and_push.py --push-only --name math-test-maxx"
+        )
     api = HfApi()
     api.create_repo(repo_id, exist_ok=True, private=private, repo_type="model")
     api.upload_folder(
