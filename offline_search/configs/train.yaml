@@ -3,11 +3,12 @@ selection:
   max_near_correct_per_problem: 16
   max_hard_negatives_per_problem: 32
   max_low_reward_negatives_per_problem: 4
+  drop_clipped: true
 
 entropy:
   threshold: 0.8
   scale: 0.25
-  mode: sigmoid
+  mode: hard
 
 training:
   backend: unsloth
@@ -32,3 +33,4 @@ training:
   drop_zero_advantage: true
   min_abs_advantage: 1.0e-8
   cover_all_informative: true
+  neg_prob_floor: 1.0e-4

@@ -37,12 +37,21 @@ Official Qwen2.5-1.5B-Instruct (different protocol): GSM8K 73.2% / MATH 55.2%. O
 
 ## Search / train
 
-| | |
-| --- | ---: |
-| rollouts | 6000 |
-| mean reward | 0.652 |
-| exact-correct | 2515 / 6000 |
-| informative rows | 3429 / 3692 |
-| train steps | 1715 |
-| last-50 loss mean | −48.7 |
-| loss min / max | −446 / +320 |
+Search was run once (6000 rollouts) and reused for v2.
+
+| | v1 | v2 |
+| --- | ---: | ---: |
+| rollouts | 6000 | same search |
+| mean reward | 0.652 | same search |
+| exact-correct | 2515 / 6000 | same search |
+| informative rows | 3429 / 3692 | 3429 / 3692 (dataset rebuilt with EOS) |
+| lr / batch | 2e-5, 2×4 | **1e-5, 4×4**, 5% warmup |
+| micro-steps | 1715 | **858** |
+| Adam updates | 429 | **214** (10 warmup) |
+| last-50 loss mean | −48.7 | −79.5 |
+| loss min / max | −446 / +320 | −326 / +280 |
+| train wall | 847 s | 908 s |
+
+v2 recovers most of the v1 collapse but still loses to the 1.5B base. v1 checkpoint-500 is the closest trained point (69.4 / 41.6).
+
+Local writes: `FINDINGS.md` (this folder), harness JSON on the box under `outputs/qwen25_1p5b_math500_500/eval_harness/`.

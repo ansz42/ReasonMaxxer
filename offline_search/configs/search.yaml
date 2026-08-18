@@ -13,6 +13,7 @@ search:
   allocation_temperature: 0.5
   max_tokens: 1024
   seed: 42
+  retry_clipped: true
   configs:
     - temperature: 0.35
       top_p: 0.90

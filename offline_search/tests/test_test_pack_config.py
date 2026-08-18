@@ -52,21 +52,17 @@ def test_qwen25_3b_test_pack_is_unsloth_lora_math500():
     assert '"n": 300' in payload or '"num_records": 300' in payload
 
 
-def test_qwen25_1p5b_test_pack_is_rank64_full_math500():
+def test_qwen25_1p5b_test_pack_is_qkvo_rank16_full_math500():
     cfg = ExperimentConfig.from_yaml(ROOT / "configs" / "test_pack_qwen25_1p5b.yaml")
     assert cfg.model.name == "unsloth/Qwen2.5-1.5B-Instruct"
     assert cfg.training.backend == "unsloth"
-    assert cfg.training.lora_rank == 64
-    assert cfg.training.lora_alpha == 128
-    assert cfg.training.target_modules == [
-        "q_proj",
-        "k_proj",
-        "o_proj",
-        "v_proj",
-        "up_proj",
-        "down_proj",
-        "gate_proj",
-    ]
+    assert cfg.training.lora_rank == 16
+    assert cfg.training.lora_alpha == 32
+    assert cfg.training.target_modules == ["q_proj", "k_proj", "v_proj", "o_proj"]
+    assert cfg.entropy.mode == "hard"
+    assert cfg.training.neg_prob_floor == 1e-4
+    assert cfg.search.retry_clipped is True
+    assert cfg.selection.drop_clipped is True
     assert cfg.training.learning_rate == 1.0e-5
     assert cfg.training.batch_size == 4
     assert cfg.training.gradient_accumulation_steps == 4

@@ -49,6 +49,7 @@ class SearchConfig:
     generation_batch_size: int = 32
     gpu_memory_utilization: float = 0.5
     enforce_eager: bool = False
+    retry_clipped: bool = True
     configs: list[dict[str, Any]] = field(default_factory=lambda: list(DEFAULT_SEARCH_CONFIG_SPECS))
 
     def sampling_configs(self) -> list[SamplingConfig]:
@@ -61,13 +62,15 @@ class SelectionConfig:
     max_near_correct_per_problem: int = 16
     max_hard_negatives_per_problem: int = 32
     max_low_reward_negatives_per_problem: int = 4
+    drop_clipped: bool = True
+    max_generated_tokens: int | None = None
 
 
 @dataclass
 class EntropyConfig:
     threshold: float = 0.8
     scale: float = 0.25
-    mode: str = "sigmoid"
+    mode: str = "hard"
 
 
 @dataclass
@@ -94,6 +97,7 @@ class TrainingConfig:
     drop_zero_advantage: bool = True
     min_abs_advantage: float = 1e-8
     cover_all_informative: bool = True
+    neg_prob_floor: float = 1e-4
 
 
 @dataclass

@@ -24,6 +24,7 @@ def search_settings_from_config(cfg: ExperimentConfig) -> SearchSettings:
         max_tokens=s.max_tokens,
         seed=s.seed,
         generation_batch_size=s.generation_batch_size,
+        retry_clipped=s.retry_clipped,
     )
 
 

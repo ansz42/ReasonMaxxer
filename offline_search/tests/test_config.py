@@ -45,6 +45,10 @@ def test_training_defaults_drop_zero_advantage_and_cover_informative():
     assert cfg.training.batch_size == 2
     assert cfg.training.gradient_accumulation_steps == 4
     assert cfg.training.max_grad_norm == 0.1
+    assert cfg.training.neg_prob_floor == 1e-4
+    assert cfg.entropy.mode == "hard"
+    assert cfg.selection.drop_clipped is True
+    assert cfg.search.retry_clipped is True
 
 
 def test_search_vllm_runtime_defaults_are_conservative():

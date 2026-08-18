@@ -4,6 +4,8 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any, Sequence
 
+from offline_search.search.clipping import is_clipped_record
+
 
 @dataclass(frozen=True)
 class SelectionCaps:
@@ -11,6 +13,8 @@ class SelectionCaps:
     max_near_correct_per_problem: int = 16
     max_hard_negatives_per_problem: int = 32
     max_low_reward_negatives_per_problem: int = 4
+    drop_clipped: bool = True
+    max_generated_tokens: int | None = None
 
 
 def _reward(row: dict[str, Any]) -> float:
@@ -85,5 +89,11 @@ def select_trajectories(rows: Sequence[dict[str, Any]], caps: SelectionCaps | No
 
     selected: list[dict[str, Any]] = []
     for problem_id in sorted(grouped):
-        selected.extend(select_for_problem(grouped[problem_id], caps))
+        rows = grouped[problem_id]
+        if caps.drop_clipped:
+            rows = [r for r in rows if not is_clipped_record(r, caps.max_generated_tokens)]
+        else:
+            rows = [r for r in rows if not r.get("discarded")]
+        if rows:
+            selected.extend(select_for_problem(rows, caps))
     return selected

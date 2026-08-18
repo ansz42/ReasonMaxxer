@@ -7,6 +7,7 @@ from collections.abc import Callable
 from typing import Any, Sequence
 
 from offline_search.search.adaptive_allocator import allocate_remaining, config_score
+from offline_search.search.clipping import clip_retry_seed, is_clipped
 from offline_search.search.generate import GenerationBackend
 from offline_search.search.resume import JobKey, append_jsonl, completed_job_keys, filter_pending, job_key, load_jsonl
 from offline_search.search.sampling_configs import SamplingConfig
@@ -52,11 +53,16 @@ class SearchSettings:
     seed: int = 42
     flush_every: int = 1
     generation_batch_size: int = 32
+    retry_clipped: bool = True
+
+
+def _usable_records(records: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [rec for rec in records if not rec.get("discarded")]
 
 
 def _config_stats(records: Sequence[dict[str, Any]]) -> dict[str, dict[str, float]]:
     by_cfg: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    for rec in records:
+    for rec in _usable_records(records):
         by_cfg[str(rec["sampling_config_id"])].append(rec)
     stats: dict[str, dict[str, float]] = {}
     for cfg_id, rows in by_cfg.items():
@@ -115,7 +121,7 @@ def plan_adaptive_jobs(
     jobs: list[SearchJob] = []
     for problem in problems:
         rows = by_problem.get(problem.problem_id, [])
-        remaining = int(settings.total_samples_per_problem) - len(rows)
+        remaining = int(settings.total_samples_per_problem) - len(_usable_records(rows))
         if remaining <= 0:
             continue
         stats = _config_stats(rows)
@@ -178,12 +184,63 @@ def _record_from_result(job: SearchJob, result: Any, scorer: RolloutScorer) -> d
         "is_correct": bool(score.is_correct),
         "near_correct": bool(score.near_correct),
         "generated_tokens": int(result.num_tokens),
+        "finish_reason": result.finish_reason,
+        "clipped": False,
+        "clip_retried": False,
+        "discarded": False,
         "metadata": score.metadata,
     }
     rendered = (result.extra or {}).get("rendered_prompt")
     if rendered is not None:
         record["rendered_prompt"] = rendered
     return record
+
+
+def _bump_extra(accounting: SearchAccounting, key: str, n: int = 1) -> None:
+    accounting.extra[key] = int(accounting.extra.get(key, 0)) + int(n)
+
+
+def _write_record(
+    record: dict[str, Any],
+    *,
+    jsonl_path: Path,
+    accounting: SearchAccounting,
+    tokens: int,
+    written: list[dict[str, Any]],
+    on_record: Callable[[dict[str, Any], SearchAccounting], None] | None,
+) -> None:
+    append_jsonl(jsonl_path, [record])
+    accounting.add_rollout(tokens)
+    written.append(record)
+    if on_record is not None:
+        on_record(record, accounting)
+
+
+def _generate_chunk(
+    jobs: Sequence[SearchJob],
+    backend: GenerationBackend,
+    *,
+    settings: SearchSettings,
+    seeds: Sequence[int],
+    temperature: float,
+    top_p: float,
+    top_k: int | None,
+    repetition_penalty: float,
+) -> list[Any]:
+    outputs = backend.generate(
+        [job.prompt for job in jobs],
+        temperature=temperature,
+        top_p=top_p,
+        n=1,
+        max_tokens=settings.max_tokens,
+        seed=int(seeds[0]),
+        seeds=list(seeds),
+        top_k=top_k,
+        repetition_penalty=repetition_penalty,
+    )
+    if len(outputs) != len(jobs):
+        raise RuntimeError(f"backend returned {len(outputs)} rows for {len(jobs)} prompts")
+    return [rows[0] for rows in outputs]
 
 
 def _execute_jobs(
@@ -203,27 +260,67 @@ def _execute_jobs(
 
     for (temperature, top_p, top_k, repetition_penalty), group in grouped.items():
         for chunk in _chunks(group, settings.generation_batch_size):
-            outputs = backend.generate(
-                [job.prompt for job in chunk],
+            results = _generate_chunk(
+                chunk,
+                backend,
+                settings=settings,
+                seeds=[job.seed for job in chunk],
                 temperature=temperature,
                 top_p=top_p,
-                n=1,
-                max_tokens=settings.max_tokens,
-                seed=chunk[0].seed,
-                seeds=[job.seed for job in chunk],
                 top_k=top_k,
                 repetition_penalty=repetition_penalty,
             )
-            if len(outputs) != len(chunk):
-                raise RuntimeError(f"backend returned {len(outputs)} rows for {len(chunk)} prompts")
-            for job, rows in zip(chunk, outputs):
-                result = rows[0]
+            kept_jobs: list[SearchJob] = []
+            kept_results: list[Any] = []
+            retry_jobs: list[SearchJob] = []
+            for job, result in zip(chunk, results):
+                if settings.retry_clipped and is_clipped(result, settings.max_tokens):
+                    _bump_extra(accounting, "clipped_first_pass")
+                    accounting.add_rollout(result.num_tokens)
+                    retry_jobs.append(job)
+                else:
+                    kept_jobs.append(job)
+                    kept_results.append(result)
+            for job, result in zip(kept_jobs, kept_results):
                 record = _record_from_result(job, result, scorer)
-                append_jsonl(jsonl_path, [record])
-                accounting.add_rollout(result.num_tokens)
-                written.append(record)
-                if on_record is not None:
-                    on_record(record, accounting)
+                _write_record(
+                    record,
+                    jsonl_path=jsonl_path,
+                    accounting=accounting,
+                    tokens=result.num_tokens,
+                    written=written,
+                    on_record=on_record,
+                )
+            if not retry_jobs:
+                continue
+            retry_results = _generate_chunk(
+                retry_jobs,
+                backend,
+                settings=settings,
+                seeds=[clip_retry_seed(job.seed) for job in retry_jobs],
+                temperature=temperature,
+                top_p=top_p,
+                top_k=top_k,
+                repetition_penalty=repetition_penalty,
+            )
+            for job, result in zip(retry_jobs, retry_results):
+                record = _record_from_result(job, result, scorer)
+                record["clip_retried"] = True
+                still_clipped = is_clipped(result, settings.max_tokens)
+                record["clipped"] = still_clipped
+                record["discarded"] = still_clipped
+                if still_clipped:
+                    _bump_extra(accounting, "clipped_discarded")
+                else:
+                    _bump_extra(accounting, "clipped_recovered")
+                _write_record(
+                    record,
+                    jsonl_path=jsonl_path,
+                    accounting=accounting,
+                    tokens=result.num_tokens,
+                    written=written,
+                    on_record=on_record,
+                )
     return written
 
 

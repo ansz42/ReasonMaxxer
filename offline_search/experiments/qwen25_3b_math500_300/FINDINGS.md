@@ -14,9 +14,10 @@ v1 (LR `2e-4`, batch 1×4, clip 1.0) was a **regression, not a collapse**. v2 (L
 | Base `unsloth/Qwen2.5-3B-Instruct` | 84.6% | 61.6% |
 | math-test-maxx (v1 LoRA) | 82.9% | 53.8% |
 | v1 vs base | −1.7 pp | −7.8 pp |
-| math-test-maxx-lr2e5 (v2 LoRA) | **85.0%** | **62.8%** |
-| v2 vs base | **+0.4 pp** | **+1.2 pp** |
-| v2 vs v1 | +2.1 pp | +9.0 pp |
+| math-test-maxx-lr2e5 (v2 final, step 774) | **85.0%** | **62.8%** |
+| v2 checkpoint-500 | 85.2% | 62.4% |
+| v2 final vs base | **+0.4 pp** | **+1.2 pp** |
+| ckpt-500 vs final | +0.2 pp | −0.4 pp |
 
 Official Qwen2.5-3B-Instruct reports GSM8K **86.7%** (typically 8-shot) and MATH **65.9%**. Those are not this harness. The table above is the only apples-to-apples comparison.
 
@@ -126,3 +127,15 @@ In-loop eval on the **300 train items** (temp 0.6, n=4):
 Same-protocol greedy numbers are in the table at the top. v2 is a small gain over the base on both GSM8K and MATH-500, and it undoes the v1 MATH drop.
 
 Pipeline: `rerun_train_v2.sh` finished `==== RERUN DONE 2026-08-18T06:15:14Z ====`. Search was not re-run.
+
+## v2 checkpoint-500 vs final (step 774)
+
+Same-protocol greedy harness on the merged 16-bit weights from `train/checkpoint-500` (saved 05:54 UTC, before the late-train loss spike). Local merge: `outputs/qwen25_3b_math500_300/merged/math-test-maxx-ckpt500/`. Harness 06:30–06:39 UTC.
+
+| Model | GSM8K | MATH-500 |
+| --- | ---: | ---: |
+| Base | 84.6% | 61.6% |
+| v2 ckpt-500 | **85.2%** | 62.4% |
+| v2 final (774) | 85.0% | **62.8%** |
+
+Checkpoint-500 is not a clear win. GSM8K is +0.2 pp (~2–3 items) vs the final adapter; MATH-500 is −0.4 pp (2 items). Both still beat the base. The last-step loss spike (−156) did not collapse the final adapter; MATH slightly prefers the full pass.

@@ -24,6 +24,7 @@ search:
   allocation_temperature: 0.5
   max_tokens: 3000
   seed: 42
+  retry_clipped: true
   configs:
     - temperature: 0.35
       top_p: 0.90
@@ -48,25 +49,23 @@ selection:
   max_near_correct_per_problem: 4
   max_hard_negatives_per_problem: 4
   max_low_reward_negatives_per_problem: 2
+  drop_clipped: true
 
 entropy:
   threshold: 0.8
   scale: 0.25
-  mode: sigmoid
+  mode: hard
 
 training:
   backend: unsloth
-  lora_rank: 64
-  lora_alpha: 128
+  lora_rank: 16
+  lora_alpha: 32
   lora_dropout: 0.0
   target_modules:
     - q_proj
     - k_proj
-    - o_proj
     - v_proj
-    - up_proj
-    - down_proj
-    - gate_proj
+    - o_proj
   learning_rate: 1.0e-5
   batch_size: 4
   gradient_accumulation_steps: 4
@@ -78,6 +77,7 @@ training:
   min_abs_advantage: 1.0e-8
   cover_all_informative: true
   kl_coef: 0.0
+  neg_prob_floor: 1.0e-4
   objective: graded_signed
   max_grad_norm: 0.1
   seed: 42
@@ -97,5 +97,5 @@ evaluation:
 wandb:
   enabled: true
   project: offline-search
-  name: qwen25-1p5b-math500-500-v2
+  name: qwen25-1p5b-math500-500-v3
   group: qwen25-1p5b-math500

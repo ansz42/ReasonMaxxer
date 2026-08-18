@@ -30,7 +30,7 @@ def attach_entropy_and_weights(
     *,
     threshold: float,
     scale: float,
-    mode: str = "sigmoid",
+    mode: str = "hard",
 ) -> dict[str, Any]:
     ids = [int(x) for x in input_ids]
     entropies = [float(x) for x in entropy_fn(ids)]

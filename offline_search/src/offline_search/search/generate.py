@@ -32,8 +32,13 @@ class GenerationBackend(Protocol):
 class ScriptedBackend:
     """Deterministic backend for tests. Maps (prompt, temperature, seed) -> text."""
 
-    def __init__(self, script: dict[tuple[str, float, int], str] | None = None) -> None:
+    def __init__(
+        self,
+        script: dict[tuple[str, float, int], str] | None = None,
+        finish_reasons: dict[tuple[str, float, int], str] | None = None,
+    ) -> None:
         self.script = script or {}
+        self.finish_reasons = finish_reasons or {}
         self.calls: list[dict[str, Any]] = []
 
     def generate(
@@ -49,7 +54,7 @@ class ScriptedBackend:
         repetition_penalty: float = 1.0,
         seeds: Sequence[int] | None = None,
     ) -> list[list[GenerationResult]]:
-        del top_p, max_tokens, top_k, repetition_penalty
+        del top_p, top_k, repetition_penalty
         prompt_seeds = [int(s) for s in seeds] if seeds is not None else [int(seed)] * len(prompts)
         if len(prompt_seeds) != len(prompts):
             raise ValueError("seeds must match prompts")
@@ -71,7 +76,10 @@ class ScriptedBackend:
                 if text is None:
                     text = self.script.get((prompt, float(temperature), int(prompt_seed)), f"scripted:{prompt_seed}:{i}")
                 token_count = max(1, len(text.split()))
-                rows.append(GenerationResult(text=text, num_tokens=token_count))
+                reason = self.finish_reasons.get(key)
+                if reason is None and int(max_tokens) > 0 and token_count >= int(max_tokens):
+                    reason = "length"
+                rows.append(GenerationResult(text=text, num_tokens=token_count, finish_reason=reason))
             out.append(rows)
         return out
 
@@ -166,10 +174,15 @@ class TransformersBackend:
             for row_i, (seq, prompt_len) in enumerate(zip(outputs, prompt_lens)):
                 gen_ids = seq[int(prompt_len) :]
                 text = self.tokenizer.decode(gen_ids, skip_special_tokens=True)
+                n_new = int(len(gen_ids))
+                eos_id = getattr(self.tokenizer, "eos_token_id", None)
+                hit_eos = bool(n_new and eos_id is not None and int(gen_ids[-1]) == int(eos_id))
+                finish_reason = "stop" if hit_eos or n_new < int(max_tokens) else "length"
                 results[row_i].append(
                     GenerationResult(
                         text=text,
-                        num_tokens=int(len(gen_ids)),
+                        num_tokens=n_new,
+                        finish_reason=finish_reason,
                         extra={"rendered_prompt": rendered[row_i]},
                     )
                 )

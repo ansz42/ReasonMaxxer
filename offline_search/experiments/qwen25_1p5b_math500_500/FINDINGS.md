@@ -23,7 +23,7 @@ GSM8K is held-out. MATH-500 is in-domain (the pack trains on the full test split
 
 Our 1.5B base lands close to the official card (71.5 vs 73.2 GSM8K, 50.4 vs 55.2 MATH) once you allow for 0-shot vs few-shot. The trained adapters do **not** beat this base.
 
-## What ran
+## What ran (v1)
 
 | Stage | Result |
 | --- | --- |

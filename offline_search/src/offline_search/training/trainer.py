@@ -6,7 +6,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Sequence
 
-from offline_search.training.loss import causal_token_logprobs, decision_loss
+from offline_search.training.loss import (
+    apply_neg_prob_floor,
+    causal_token_logprobs,
+    decision_loss,
+    loss_diagnostics,
+)
 from offline_search.utils.accounting import SearchAccounting
 from offline_search.utils.io import write_json
 from offline_search.utils.tracking import gpu_snapshot, log as wandb_log
@@ -41,6 +46,7 @@ class TrainSettings:
     cover_all_informative: bool = True
     warmup_steps: int = 0
     warmup_ratio: float = 0.0
+    neg_prob_floor: float = 1e-4
 
 
 def should_save_checkpoint(step: int, save_steps: int | None) -> bool:
@@ -209,6 +215,7 @@ def train_signed_entropy(
             outputs = model(input_ids=input_ids, attention_mask=attention)
             logits = outputs.logits if hasattr(outputs, "logits") else outputs
             logprobs = causal_token_logprobs(logits, input_ids)
+            weights = apply_neg_prob_floor(logprobs, advantage, weights, settings.neg_prob_floor)
             loss = decision_loss(logprobs, advantage, weights)
             loss = loss / max(1, int(settings.gradient_accumulation_steps))
             loss.backward()
@@ -229,13 +236,19 @@ def train_signed_entropy(
             raw_loss = float(loss.detach().cpu()) * max(1, int(settings.gradient_accumulation_steps))
             current_lr = float(optimizer.param_groups[0]["lr"])
             if global_step % int(settings.logging_steps) == 0 or global_step == 1:
+                diag = loss_diagnostics(logprobs, advantage, weights)
                 row = {
                     "step": global_step,
                     "epoch": epoch,
                     "loss": raw_loss,
                     "lr": current_lr,
                     "tokens": token_count,
-                    "advantage_mean": float(batch["advantage"].mean().item()),
+                    "advantage_mean": float(diag["advantage_mean"]),
+                    "advantage_weight_mean": float(diag["advantage_weight_mean"]),
+                    "mean_logp_pos": float(diag["mean_logp_pos"]),
+                    "mean_logp_neg": float(diag["mean_logp_neg"]),
+                    "mean_ce_pos": float(diag["mean_ce_pos"]),
+                    "mean_ce_neg": float(diag["mean_ce_neg"]),
                     "step_time_s": time.perf_counter() - t0,
                     **{k: v for k, v in gpu_snapshot().items() if isinstance(v, (int, float))},
                 }
@@ -247,6 +260,11 @@ def train_signed_entropy(
                         "train/lr": current_lr,
                         "train/tokens": token_count,
                         "train/advantage_mean": row["advantage_mean"],
+                        "train/advantage_weight_mean": row["advantage_weight_mean"],
+                        "train/mean_logp_pos": row["mean_logp_pos"],
+                        "train/mean_logp_neg": row["mean_logp_neg"],
+                        "train/mean_ce_pos": row["mean_ce_pos"],
+                        "train/mean_ce_neg": row["mean_ce_neg"],
                         "train/epoch": epoch,
                         **{k.replace("gpu/", "train/gpu_"): v for k, v in gpu_snapshot().items() if isinstance(v, (int, float))},
                     }

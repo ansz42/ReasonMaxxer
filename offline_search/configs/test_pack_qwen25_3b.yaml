@@ -53,7 +53,7 @@ selection:
 entropy:
   threshold: 0.8
   scale: 0.25
-  mode: sigmoid
+  mode: hard
 
 training:
   backend: unsloth

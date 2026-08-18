@@ -87,6 +87,7 @@ def main() -> None:
         cover_all_informative=t.cover_all_informative,
         warmup_steps=t.warmup_steps,
         warmup_ratio=t.warmup_ratio,
+        neg_prob_floor=t.neg_prob_floor,
     )
     metrics = train_signed_entropy(model, rows, settings=settings, output_dir=output_dir, pad_id=pad_id)
     save_lora(model, str(output_dir / "adapter"))

@@ -123,6 +123,11 @@ def test_trainer_skips_zero_advantage_rows():
     assert metrics["num_rows_dropped"] == 3
     assert metrics["steps"] == 8
     assert all(abs(row["advantage_mean"]) > 0.0 for row in metrics["logs"])
+    assert "mean_logp_pos" in metrics["logs"][0]
+    assert "mean_logp_neg" in metrics["logs"][0]
+    assert "mean_ce_pos" in metrics["logs"][0]
+    assert "mean_ce_neg" in metrics["logs"][0]
+    assert "advantage_weight_mean" in metrics["logs"][0]
 
 
 def test_should_save_checkpoint_every_100_steps():

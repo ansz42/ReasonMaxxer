@@ -19,8 +19,10 @@ Closed-loop offline-search + entropy-weighted Unsloth LoRA on **300** random `Hu
 | --- | ---: | ---: |
 | Base `unsloth/Qwen2.5-3B-Instruct` | 84.6% | 61.6% |
 | v1 LoRA (`2e-4`, batch 1×4, clip 1.0) | 82.9% | 53.8% |
-| **v2 LoRA (`2e-5`, batch 2×4, clip 0.1)** | **85.0%** | **62.8%** |
-| v2 vs base | **+0.4 pp** | **+1.2 pp** |
+| **v2 LoRA final (`2e-5`, 2×4, clip 0.1, step 774)** | 85.0% | **62.8%** |
+| v2 checkpoint-500 | **85.2%** | 62.4% |
+| v2 final vs base | +0.4 pp | **+1.2 pp** |
+| ckpt-500 vs final | +0.2 pp | −0.4 pp |
 
 Official Qwen2.5-3B-Instruct reports (typically 8-shot) are GSM8K 86.7% / MATH 65.9%. Those are a different protocol.
 

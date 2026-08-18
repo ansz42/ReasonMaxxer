@@ -101,3 +101,52 @@ def test_positive_advantage_increases_token_probability():
 def test_negative_advantage_decreases_token_probability():
     before, after = _one_step(-1.0)
     assert after < before
+
+
+def test_per_sequence_mean_does_not_let_long_row_dominate():
+    logp = [[-10.0] * 8, [-1.0] + [0.0] * 7]
+    weights = [[1.0] * 8, [1.0] + [0.0] * 7]
+    loss = decision_loss_numpy(logp, [-1.0, 1.0], weights)
+    # L_neg = -10, L_pos = 1, mean = -4.5. Global-sum pooling would be ~-8.78.
+    assert abs(loss - (-4.5)) < 1e-7
+
+
+def test_zero_weight_sequence_is_ignored_in_batch_mean():
+    logp = [[-4.0, -4.0], [-99.0, -99.0]]
+    weights = [[1.0, 1.0], [0.0, 0.0]]
+    loss = decision_loss_numpy(logp, [1.0, -1.0], weights)
+    assert abs(loss - 4.0) < 1e-7
+
+
+def test_neg_prob_floor_zeros_already_dead_negative_tokens():
+    from offline_search.training.loss import apply_neg_prob_floor
+
+    logp = [[math.log(1e-8), math.log(0.25)]]
+    weights = [[1.0, 0.8]]
+    out = apply_neg_prob_floor(logp, [-1.5], weights, floor=1e-4)
+    assert out[0][0] == 0.0
+    assert abs(out[0][1] - 0.8) < 1e-12
+
+
+def test_neg_prob_floor_leaves_positive_rows_alone():
+    from offline_search.training.loss import apply_neg_prob_floor
+
+    logp = [[math.log(1e-8), math.log(0.25)]]
+    weights = [[1.0, 1.0]]
+    out = apply_neg_prob_floor(logp, [1.0], weights, floor=1e-4)
+    assert out[0] == [1.0, 1.0]
+
+
+def test_loss_diagnostics_split_by_sign_and_weight_advantage():
+    from offline_search.training.loss import loss_diagnostics_numpy
+
+    logp = [[-2.0, -2.0], [-4.0, 0.0]]
+    weights = [[1.0, 1.0], [1.0, 0.0]]
+    stats = loss_diagnostics_numpy(logp, [1.0, -2.0], weights)
+    assert abs(stats["mean_logp_pos"] - (-2.0)) < 1e-7
+    assert abs(stats["mean_logp_neg"] - (-4.0)) < 1e-7
+    assert abs(stats["mean_ce_pos"] - 2.0) < 1e-7
+    assert abs(stats["mean_ce_neg"] - 4.0) < 1e-7
+    # weight mass: pos=2, neg=1 → (1*2 + -2*1) / 3 = 0
+    assert abs(stats["advantage_weight_mean"] - 0.0) < 1e-7
+    assert abs(stats["advantage_mean"] - (-0.5)) < 1e-7

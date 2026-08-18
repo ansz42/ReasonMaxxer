@@ -57,6 +57,8 @@ def main() -> None:
             max_near_correct_per_problem=cfg.selection.max_near_correct_per_problem,
             max_hard_negatives_per_problem=cfg.selection.max_hard_negatives_per_problem,
             max_low_reward_negatives_per_problem=cfg.selection.max_low_reward_negatives_per_problem,
+            drop_clipped=cfg.selection.drop_clipped,
+            max_generated_tokens=cfg.selection.max_generated_tokens or cfg.search.max_tokens,
         ),
         objective=cfg.training.objective,
         entropy_threshold=cfg.entropy.threshold,

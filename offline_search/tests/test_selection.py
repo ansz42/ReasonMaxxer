@@ -43,3 +43,26 @@ def test_selection_is_per_problem():
     rows = [_row("a", 1.0, correct=True, seed=1), _row("b", 1.0, correct=True, seed=2), _row("b", 0.0, seed=3)]
     selected = select_trajectories(rows, SelectionCaps(1, 0, 1, 0))
     assert {r["problem_id"] for r in selected} == {"a", "b"}
+
+
+def test_drops_clipped_and_discarded_rows():
+    rows = [
+        _row("p", 1.0, correct=True, seed=1),
+        {**_row("p", 0.4, seed=2), "generated_tokens": 3000},
+        {**_row("p", 0.15, seed=3), "discarded": True},
+        {**_row("p", 0.4, seed=4), "finish_reason": "length"},
+        _row("p", 0.4, seed=5),
+    ]
+    selected = select_trajectories(
+        rows,
+        SelectionCaps(
+            max_correct_per_problem=8,
+            max_near_correct_per_problem=0,
+            max_hard_negatives_per_problem=8,
+            max_low_reward_negatives_per_problem=8,
+            drop_clipped=True,
+            max_generated_tokens=3000,
+        ),
+    )
+    seeds = {r["seed"] for r in selected}
+    assert seeds == {1, 5}

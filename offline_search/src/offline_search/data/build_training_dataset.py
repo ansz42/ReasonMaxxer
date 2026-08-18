@@ -123,7 +123,7 @@ def build_training_rows(
     objective: str = "graded_signed",
     entropy_threshold: float = 0.8,
     entropy_scale: float = 0.25,
-    entropy_mode: str = "sigmoid",
+    entropy_mode: str = "hard",
     enable_thinking: bool = False,
 ) -> list[dict[str, Any]]:
     selected = select_trajectories(search_records, caps or SelectionCaps())
