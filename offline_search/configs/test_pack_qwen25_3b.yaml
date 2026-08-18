@@ -65,8 +65,8 @@ training:
     - k_proj
     - v_proj
     - o_proj
-  learning_rate: 2.0e-4
-  batch_size: 1
+  learning_rate: 2.0e-5
+  batch_size: 2
   gradient_accumulation_steps: 4
   epochs: 1
   max_steps: 200
@@ -76,7 +76,7 @@ training:
   cover_all_informative: true
   kl_coef: 0.0
   objective: graded_signed
-  max_grad_norm: 1.0
+  max_grad_norm: 0.1
   seed: 42
   logging_steps: 1
 
@@ -94,5 +94,5 @@ evaluation:
 wandb:
   enabled: true
   project: offline-search
-  name: qwen25-3b-math500-300
+  name: qwen25-3b-math500-300-lr2e5
   group: qwen25-3b-math500

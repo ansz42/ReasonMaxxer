@@ -32,6 +32,10 @@ def test_qwen25_3b_test_pack_is_unsloth_lora_math500():
     assert cfg.training.drop_zero_advantage is True
     assert cfg.training.cover_all_informative is True
     assert cfg.training.save_steps == 50
+    assert cfg.training.learning_rate == 2.0e-5
+    assert cfg.training.batch_size == 2
+    assert cfg.training.gradient_accumulation_steps == 4
+    assert cfg.training.max_grad_norm == 0.1
     assert cfg.search.backend == "vllm"
     assert cfg.search.total_samples_per_problem == 12
     assert cfg.search.max_tokens == 3000
