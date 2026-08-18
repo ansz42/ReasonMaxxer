@@ -9,6 +9,7 @@ from offline_search.scoring.math_verifier import answers_match, extract_math_ans
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "examples" / "qwen25_3b" / "fixtures" / "math500_300.json"
+FIXTURE_500 = ROOT / "examples" / "qwen25_1p5b" / "fixtures" / "math500_500.json"
 
 
 def _fake_rows(n: int = 10) -> list[dict]:
@@ -66,6 +67,21 @@ def test_math500_300_fixture_exists_and_loads():
         assert row.get("solution")
     problems = load_problems_file(FIXTURE)
     assert len(problems) == 300
+    assert all(p.reference_answer for p in problems)
+
+
+def test_math500_500_fixture_is_full_split():
+    assert FIXTURE_500.exists(), f"Missing fixture {FIXTURE_500}; run sample_math500.py --n 500"
+    payload = json.loads(FIXTURE_500.read_text(encoding="utf-8"))
+    records = payload["records"]
+    assert payload["meta"]["dataset"] == "HuggingFaceH4/MATH-500"
+    assert payload["meta"]["split"] == "test"
+    assert payload["meta"]["n"] == 500
+    assert len(records) == 500
+    ids = [row["problem_id"] for row in records]
+    assert len(set(ids)) == 500
+    problems = load_problems_file(FIXTURE_500)
+    assert len(problems) == 500
     assert all(p.reference_answer for p in problems)
 
 

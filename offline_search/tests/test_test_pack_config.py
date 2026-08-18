@@ -52,6 +52,35 @@ def test_qwen25_3b_test_pack_is_unsloth_lora_math500():
     assert '"n": 300' in payload or '"num_records": 300' in payload
 
 
+def test_qwen25_1p5b_test_pack_is_rank64_full_math500():
+    cfg = ExperimentConfig.from_yaml(ROOT / "configs" / "test_pack_qwen25_1p5b.yaml")
+    assert cfg.model.name == "unsloth/Qwen2.5-1.5B-Instruct"
+    assert cfg.training.backend == "unsloth"
+    assert cfg.training.lora_rank == 64
+    assert cfg.training.lora_alpha == 128
+    assert cfg.training.target_modules == [
+        "q_proj",
+        "k_proj",
+        "o_proj",
+        "v_proj",
+        "up_proj",
+        "down_proj",
+        "gate_proj",
+    ]
+    assert cfg.training.learning_rate == 2.0e-5
+    assert cfg.training.batch_size == 2
+    assert cfg.training.gradient_accumulation_steps == 4
+    assert cfg.training.max_grad_norm == 0.1
+    assert cfg.search.backend == "vllm"
+    assert cfg.search.total_samples_per_problem == 12
+    assert cfg.search.max_tokens == 3000
+    assert cfg.model.max_seq_length == 6144
+    problems = ROOT / cfg.problems_file
+    assert problems.exists()
+    payload = problems.read_text(encoding="utf-8")
+    assert '"n": 500' in payload or '"num_records": 500' in payload
+
+
 def test_eval_math_harness_is_greedy_gsm8k_math500():
     cfg = ExperimentConfig.from_yaml(ROOT / "configs" / "eval_math_harness.yaml")
     assert cfg.search.backend == "vllm"

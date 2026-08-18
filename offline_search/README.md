@@ -63,6 +63,21 @@ python examples\qwen25_3b\run_test_pack.py --mode smoke
 
 See `examples/qwen25_3b/README.md`.
 
+Full-split 1.5B follow-up (all 500 MATH-500 items, LoRA r=64 on q/k/o/v/up/down/gate):
+
+```powershell
+python scripts\sample_math500.py --n 500 --out examples\qwen25_1p5b\fixtures\math500_500.json
+python examples\qwen25_1p5b\run_test_pack.py --mode unit
+python examples\qwen25_1p5b\run_test_pack.py --mode smoke
+```
+
+- model: `unsloth/Qwen2.5-1.5B-Instruct`
+- trainer: Unsloth LoRA, rank 64, α=128, QKVO + up/down/gate
+- config: `configs/test_pack_qwen25_1p5b.yaml`
+- fixtures: `examples/qwen25_1p5b/fixtures/math500_500.json`
+
+See `examples/qwen25_1p5b/README.md`. MATH-500 eval after this pack is in-domain; GSM8K is held-out.
+
 ## Layout
 
 ```text
@@ -72,4 +87,5 @@ scripts/          01_search  02_build_dataset  03_train  04_eval  sample_math500
 tests/            CPU unit suite (no model download)
 examples/qwen3_1p7b/
 examples/qwen25_3b/
+examples/qwen25_1p5b/
 ```
