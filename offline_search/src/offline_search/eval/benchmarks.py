@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Callable, Sequence
 
+from offline_search.data.aime24 import AIME24_HF_NAME, load_aime24_records
 from offline_search.data.gsm8k import GSM8K_HF_NAME, load_gsm8k_records
 from offline_search.data.math500 import MATH500_HF_NAME, load_math500_rows, row_to_record as math500_row_to_record
 from offline_search.prompting import build_user_prompt
@@ -44,11 +45,13 @@ def load_math500_records(*, limit: int | None = None) -> list[dict[str, Any]]:
 BENCHMARK_LOADERS: dict[str, Callable[..., list[dict[str, Any]]]] = {
     "gsm8k": load_gsm8k_records,
     "math500": load_math500_records,
+    "aime24": load_aime24_records,
 }
 
 BENCHMARK_SOURCES = {
     "gsm8k": GSM8K_HF_NAME,
     "math500": MATH500_HF_NAME,
+    "aime24": AIME24_HF_NAME,
 }
 
 

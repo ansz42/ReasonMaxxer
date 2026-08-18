@@ -106,3 +106,15 @@ def test_eval_math_harness_1p5b_is_greedy_gsm8k_math500():
     assert cfg.evaluation.max_tokens == 3000
     assert cfg.raw.get("benchmarks") == ["gsm8k", "math500"]
     assert cfg.output_dir == "outputs/qwen25_1p5b_math500_500"
+
+
+def test_eval_aime24_1p5b_is_avg8():
+    cfg = ExperimentConfig.from_yaml(ROOT / "configs" / "eval_aime24_1p5b.yaml")
+    assert cfg.model.name == "unsloth/Qwen2.5-1.5B-Instruct"
+    assert cfg.search.backend == "vllm"
+    assert cfg.evaluation.temperature == 0.6
+    assert cfg.evaluation.top_p == 0.95
+    assert cfg.evaluation.n_samples == 8
+    assert cfg.evaluation.pass_k == [1, 8]
+    assert cfg.evaluation.max_tokens == 4096
+    assert cfg.raw.get("benchmarks") == ["aime24"]

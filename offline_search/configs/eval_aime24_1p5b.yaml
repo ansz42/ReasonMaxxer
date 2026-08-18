@@ -1,0 +1,38 @@
+# AIME 2024 avg@8 for Qwen2.5-1.5B (base or merged LoRA).
+# 30 problems × 8 samples, temp 0.6 / top_p 0.95, boxed chat + MathVerifier.
+# Override --model with the local merged dir or Hub id.
+
+output_dir: outputs/qwen25_1p5b_math500_500
+
+model:
+  name: unsloth/Qwen2.5-1.5B-Instruct
+  max_seq_length: 6144
+  enable_thinking: false
+  prompt_style: qwen3_chat
+  backend: unsloth
+
+search:
+  backend: vllm
+  generation_batch_size: 32
+  gpu_memory_utilization: 0.6
+  enforce_eager: false
+
+evaluation:
+  pass_k:
+    - 1
+    - 8
+  temperature: 0.6
+  top_p: 0.95
+  n_samples: 8
+  max_tokens: 4096
+  generation_batch_size: 32
+  seed: 42
+
+benchmarks:
+  - aime24
+
+wandb:
+  enabled: true
+  project: offline-search
+  name: qwen25-1p5b-aime24-avg8
+  group: qwen25-1p5b-math500

@@ -87,9 +87,11 @@ def evaluate_backend(
         values = [row["metrics"][f"pass@{k}"] for row in per_problem]
         macro[f"pass@{k}"] = sum(values) / max(1, len(values))
 
+    micro = (c_all / n_all) if n_all else 0.0
     result = {
         "macro": macro,
-        "micro_correct_rate": (c_all / n_all) if n_all else 0.0,
+        "micro_correct_rate": micro,
+        f"avg@{int(n_samples)}": micro,
         "num_problems": len(list(problems)),
         "n_samples": int(n_samples),
         "per_problem": per_problem,
