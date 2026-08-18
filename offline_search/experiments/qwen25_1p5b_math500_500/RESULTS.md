@@ -20,16 +20,20 @@ vLLM, boxed chat prompt, MathVerifier. Not the official few-shot card, and not t
 | Model | GSM8K (n=1319) | MATH-500 (n=500) |
 | --- | ---: | ---: |
 | Base `unsloth/Qwen2.5-1.5B-Instruct` | **71.5%** | **50.4%** |
-| Final LoRA (step 1715) | 51.9% | 29.8% |
-| checkpoint-500 | 69.4% | 41.6% |
-| final vs 1.5B base | −19.6 pp | −20.6 pp |
-| ckpt-500 vs 1.5B base | −2.1 pp | −8.8 pp |
+| v1 final (2e-5, 2×4, 1715) | 51.9% | 29.8% |
+| v1 checkpoint-500 | 69.4% | 41.6% |
+| v2 final (1e-5, 4×4, 5% warmup, 858) | 67.2% | 39.2% |
+| v2 vs 1.5B base | −4.2 pp | −11.2 pp |
+| v2 vs v1 final | +15.4 pp | +9.4 pp |
 
 Official Qwen2.5-1.5B-Instruct (different protocol): GSM8K 73.2% / MATH 55.2%. Our 0-shot base is 71.5 / 50.4.
 
 ## Pack eval (in-domain MATH-500, temp 0.6, n=4)
 
-Trained adapter: pass@1 **30.4%**, pass@4 **48.0%**. Matches the greedy MATH-500 drop on the final merge.
+| Run | pass@1 | pass@4 |
+| --- | ---: | ---: |
+| v1 final | 30.4% | 48.0% |
+| v2 final | **33.2%** | **51.6%** |
 
 ## Search / train
 

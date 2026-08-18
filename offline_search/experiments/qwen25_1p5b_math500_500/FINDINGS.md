@@ -12,10 +12,12 @@ Comparison is against the **same 1.5B base**, not the 3B table. Official Qwen2.5
 | Model | GSM8K (n=1319) | MATH-500 (n=500) |
 | --- | ---: | ---: |
 | Base `unsloth/Qwen2.5-1.5B-Instruct` | **71.5%** (943) | **50.4%** (252) |
-| Final LoRA (step 1715) | 51.9% (684) | 29.8% (149) |
-| checkpoint-500 | 69.4% (915) | 41.6% (208) |
-| final vs 1.5B base | **−19.6 pp** | **−20.6 pp** |
-| ckpt-500 vs 1.5B base | −2.1 pp | −8.8 pp |
+| v1 final (2e-5, 2×4, 1715 steps) | 51.9% (684) | 29.8% (149) |
+| v1 checkpoint-500 | 69.4% (915) | 41.6% (208) |
+| v2 final (1e-5, 4×4, 5% warmup, 858 steps) | 67.2% (887) | 39.2% (196) |
+| v1 final vs 1.5B base | −19.6 pp | −20.6 pp |
+| v2 final vs 1.5B base | −4.2 pp | −11.2 pp |
+| v2 vs v1 final | **+15.4 pp** | **+9.4 pp** |
 
 GSM8K is held-out. MATH-500 is in-domain (the pack trains on the full test split).
 
@@ -49,8 +51,9 @@ That range is the smoking gun for over-updating: more LoRA capacity (r=64 + MLP)
 | Model | GSM8K boxed | MATH-500 boxed |
 | --- | ---: | ---: |
 | 1.5B base | 1163 / 1319 (88.2%) | 460 / 500 (92.0%) |
-| checkpoint-500 | 1266 / 1319 (96.0%) | 420 / 500 (84.0%) |
-| final LoRA | 932 / 1319 (70.7%) | 260 / 500 (52.0%) |
+| v1 checkpoint-500 | 1266 / 1319 (96.0%) | 420 / 500 (84.0%) |
+| v1 final | 932 / 1319 (70.7%) | 260 / 500 (52.0%) |
+| v2 final | 1186 / 1319 (89.9%) | 409 / 500 (81.8%) |
 
 The final adapter is not dead (GSM8K still 51.9%), but it loses the boxed format on MATH and drops ~20 pp on both benches versus the 1.5B base. Checkpoint-500 keeps GSM8K almost intact (−2.1 pp) and still loses 8.8 pp on MATH.
 
@@ -62,3 +65,31 @@ The final adapter is not dead (GSM8K still 51.9%), but it loses the boxed format
 - checkpoint-500 harness: look for `qwen25-1p5b-ckpt500-harness` in the same project
 
 Local merges (not pushed): `outputs/qwen25_1p5b_math500_500/merged/math-test-maxx-1p5b/` and `.../math-test-maxx-1p5b-ckpt500/`.
+
+## v2 retry (lr 1e-5, batch 4×4, 5% warmup)
+
+Reused the same 6000-rollout search. Rebuilt `dataset_v2` so training sequences end with `<|im_end|>`. Did not redo search.
+
+Setup audit (this was not the chat-template bug):
+
+- Search prefixes match `tokenizer.apply_chat_template(..., add_generation_prompt=True)` exactly, including the default Qwen system line.
+- EOS is `<|im_end|>` (151645). v1 responses did **not** include it; v2 appends it once.
+- v1 padded batches with token **0**. v2 pads with the tokenizer pad id (`<|vision_pad|>` / 151654, a reserved unused id).
+- Warmup was configured as `warmup_steps: 0` and never applied. v2 uses `warmup_ratio: 0.05` → **10** of **214** Adam updates.
+
+| Knob | v1 | v2 |
+| --- | ---: | ---: |
+| learning_rate | 2e-5 | **1e-5** |
+| batch × accum | 2 × 4 (eff. 8) | **4 × 4** (eff. 16) |
+| warmup | none | **5%** (10 updates) |
+| micro-steps | 1715 | **858** |
+| Adam updates | 429 | **214** |
+| train wall | 847 s | 908 s |
+
+Loss is still signed and spiky (last-50 mean −79.5, min/max −326 / +280), but the harness recovered most of the v1 collapse. Boxed format is back near the 1.5B base. v2 still does **not** beat the 1.5B base. v1 checkpoint-500 remains the closest trained point on this harness (69.4 / 41.6).
+
+In-pack eval (temp 0.6, n=4): v1 30.4 / 48.0 → v2 **33.2 / 51.6**.
+
+W&B v2 train: https://wandb.ai/batuhan409/offline-search/runs/2b80d281  
+W&B v2 harness: look for `qwen25-1p5b-lora-v2-harness`  
+Merged 16-bit: `outputs/qwen25_1p5b_math500_500/merged/math-test-maxx-1p5b-v2/`
