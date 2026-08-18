@@ -1,0 +1,20 @@
+{
+  "model": "outputs/qwen25_1p5b_math500_500/merged/math-test-maxx-1p5b-v3",
+  "label": "qwen25-1p5b-lora-v3-aime24",
+  "protocol": "avg@8 temp=0.6 top_p=0.95 max_tokens=4096 boxed chat + MathVerifier",
+  "source": "HuggingFaceH4/aime_2024",
+  "num_problems": 30,
+  "n_samples": 8,
+  "avg@8": 0.025,
+  "pass@1": 0.025,
+  "pass@8": 0.1,
+  "n_correct_total": 6,
+  "n_generations": 240,
+  "problems_with_hit": 3,
+  "hits": [
+    {"problem_id": "aime24/67", "contest": "AIME I-2", "n_correct": 3, "n": 8},
+    {"problem_id": "aime24/69", "contest": "AIME I-4", "n_correct": 1, "n": 8},
+    {"problem_id": "aime24/72", "contest": "AIME I-7", "n_correct": 2, "n": 8}
+  ],
+  "wandb": "https://wandb.ai/batuhan409/offline-search/runs/ebb7baf8"
+}

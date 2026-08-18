@@ -2,7 +2,7 @@
 
 # Qwen2.5-1.5B MATH-500 results
 
-Closed-loop offline-search + entropy-weighted Unsloth LoRA on **all 500** `HuggingFaceH4/MATH-500["test"]` items, then greedy 0-shot GSM8K / MATH-500.
+Closed-loop offline-search + entropy-weighted Unsloth LoRA on **all 500** `HuggingFaceH4/MATH-500["test"]` items, then greedy 0-shot GSM8K / MATH-500 and AIME 2024 avg@8.
 
 - Model: `unsloth/Qwen2.5-1.5B-Instruct`
 - LoRA: r=64, α=128, q/k/o/v/up/down/gate
@@ -28,6 +28,19 @@ vLLM, boxed chat prompt, MathVerifier. Not the official few-shot card, and not t
 | v3 vs v2 | +7.1 pp | +12.6 pp |
 
 Official Qwen2.5-1.5B-Instruct (different protocol): GSM8K 73.2% / MATH 55.2%. Our 0-shot base is 71.5 / 50.4. v3 is the first adapter on this pack that beats the 1.5B base on both benches.
+
+## AIME 2024 avg@8 (v3 final only)
+
+Same boxed chat prompt + MathVerifier as the greedy table. 30 problems from `HuggingFaceH4/aime_2024`, 8 samples, temp 0.6, top_p 0.95, max_tokens 4096.
+
+| Model | avg@8 | pass@8 | hits |
+| --- | ---: | ---: | ---: |
+| **v3 final** | **2.5%** (6 / 240) | **10.0%** (3 / 30) | I-2 (3/8), I-4 (1/8), I-7 (2/8) |
+
+No same-protocol 1.5B base AIME24 number in this harness yet. AIME is out-of-domain vs the MATH-500 pack. Every problem still produced a `\boxed{}` in at least one sample.
+
+W&B: https://wandb.ai/batuhan409/offline-search/runs/ebb7baf8  
+Config: `configs/eval_aime24_1p5b.yaml`
 
 ## Pack eval (in-domain MATH-500, temp 0.6, n=4)
 

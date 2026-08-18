@@ -121,3 +121,21 @@ W&B v3 train: https://wandb.ai/batuhan409/offline-search/runs/9ba6408c
 W&B v3 harness: https://wandb.ai/batuhan409/offline-search/runs/8efc84f7  
 Merged 16-bit: `outputs/qwen25_1p5b_math500_500/merged/math-test-maxx-1p5b-v3/`  
 Comparison JSON: `outputs/qwen25_1p5b_math500_500/eval_harness/comparison_v3.json`
+
+## AIME 2024 avg@8 (v3 final)
+
+Held-out contest set. Not in the MATH-500 pack.
+
+| | |
+| --- | ---: |
+| protocol | 30 × 8, temp 0.6, top_p 0.95, max_tokens 4096, boxed chat + MathVerifier |
+| **avg@8** | **2.5%** (6 / 240) |
+| pass@1 (unbiased from 8) | 2.5% |
+| pass@8 | 10.0% (3 / 30 problems had ≥1 correct) |
+| boxed (any of 8) | 30 / 30 |
+| hits | AIME I-2 (3/8), I-4 (1/8), I-7 (2/8) |
+
+A 1.5B Instruct model is not expected to clear AIME. The number is a baseline for later adapters, not a claim that MATH-500 training transferred to contest math. No same-protocol base run yet.
+
+W&B: https://wandb.ai/batuhan409/offline-search/runs/ebb7baf8  
+Summary: `outputs/qwen25_1p5b_math500_500/eval_harness/qwen25-1p5b-lora-v3-aime24_summary.json`
