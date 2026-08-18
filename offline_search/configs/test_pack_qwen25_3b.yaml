@@ -94,5 +94,5 @@ evaluation:
 wandb:
   enabled: true
   project: offline-search
-  name: qwen25-3b-math500-300-lr2e5
+  name: qwen25-3b-math500-300
   group: qwen25-3b-math500

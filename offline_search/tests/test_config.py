@@ -41,6 +41,10 @@ def test_training_defaults_drop_zero_advantage_and_cover_informative():
     assert cfg.training.cover_all_informative is True
     assert cfg.training.min_abs_advantage == 1e-8
     assert cfg.training.save_steps == 100
+    assert cfg.training.learning_rate == 2.0e-5
+    assert cfg.training.batch_size == 2
+    assert cfg.training.gradient_accumulation_steps == 4
+    assert cfg.training.max_grad_norm == 0.1
 
 
 def test_search_vllm_runtime_defaults_are_conservative():

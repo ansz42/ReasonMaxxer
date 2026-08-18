@@ -66,7 +66,9 @@ This fork adds a closed-loop experiment next to the paper code:
 - Code: [`offline_search/`](offline_search/)
 - Smoke pack: `unsloth/Qwen3-1.7B`, LoRA r=16 on QKVO, config `offline_search/configs/test_pack_qwen3_1p7b.yaml`
 - Harder pack: `unsloth/Qwen2.5-3B-Instruct` on 300 random `HuggingFaceH4/MATH-500["test"]` items, vLLM batched search (12 samples × 3000 tokens), last-2-line regex grader, Unsloth LoRA (`offline_search/configs/test_pack_qwen25_3b.yaml`)
-- Measured Qwen3 run (NVIDIA L40S): 128 search rollouts, 20 LoRA steps, **pass@1 = 0.938**, **pass@4 = 1.0**, wall **465.5 s**. See [`offline_search/experiments/qwen3_1p7b_test_pack/RESULTS.md`](offline_search/experiments/qwen3_1p7b_test_pack/RESULTS.md).
+- Preferred train knobs (from the MATH-500 retry): lr **`2e-5`**, batch **2×4**, **`max_grad_norm` 0.1**, LoRA r=16 / α=32 QKVO
+- Measured Qwen3 smoke (NVIDIA L40S): 128 search rollouts, 20 LoRA steps, **pass@1 = 0.938**, **pass@4 = 1.0**, wall **465.5 s**. See [`offline_search/experiments/qwen3_1p7b_test_pack/RESULTS.md`](offline_search/experiments/qwen3_1p7b_test_pack/RESULTS.md).
+- Measured Qwen2.5-3B MATH-500 (same-protocol greedy 0-shot): base **84.6% / 61.6%** GSM8K / MATH-500 → v2 LoRA **85.0% / 62.8%** (+0.4 / +1.2 pp). v1 at `2e-4` / batch 1×4 / clip 1.0 had regressed to 82.9% / 53.8%. Summary: [`offline_search/experiments/qwen25_3b_math500_300/RESULTS.md`](offline_search/experiments/qwen25_3b_math500_300/RESULTS.md). Merged weights: [Ba2han/math-test-maxx](https://huggingface.co/Ba2han/math-test-maxx).
 - W&B project: [batuhan409/offline-search](https://wandb.ai/batuhan409/offline-search)
 
 ```bash

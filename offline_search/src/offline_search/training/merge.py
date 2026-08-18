@@ -84,6 +84,7 @@ def write_model_card(
     body = f"""---
 base_model: {base_model}
 library_name: transformers
+license: apache-2.0
 tags:
   - qwen2.5
   - lora
@@ -96,6 +97,8 @@ tags:
 Merged 16-bit weights: `{base_model}` + LoRA adapter `{adapter_path}`.
 
 Trained with the ReasonMaxxer offline-search loop (entropy-weighted signed LoRA) on 300 MATH-500 items.
+
+Preferred train knobs: lr `2e-5`, batch 2×4, `max_grad_norm` 0.1, LoRA r=16 / α=32 QKVO.
 
 {extra}
 """

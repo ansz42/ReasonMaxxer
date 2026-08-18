@@ -78,13 +78,13 @@ class TrainingConfig:
     lora_dropout: float = 0.0
     target_modules: list[str] = field(default_factory=lambda: ["q_proj", "k_proj", "v_proj", "o_proj"])
     learning_rate: float = 2.0e-5
-    batch_size: int = 1
-    gradient_accumulation_steps: int = 16
+    batch_size: int = 2
+    gradient_accumulation_steps: int = 4
     epochs: int = 1
     max_steps: int | None = None
     kl_coef: float = 0.0
     objective: str = "graded_signed"
-    max_grad_norm: float = 1.0
+    max_grad_norm: float = 0.1
     weight_decay: float = 0.0
     warmup_steps: int = 0
     seed: int = 42

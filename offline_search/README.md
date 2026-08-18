@@ -23,6 +23,8 @@ This directory is an add-on in a fork of ReasonMaxxer. The paper pipeline under 
 
 Measured Qwen3-1.7B smoke results: [`experiments/qwen3_1p7b_test_pack/RESULTS.md`](experiments/qwen3_1p7b_test_pack/RESULTS.md).
 
+Measured Qwen2.5-3B MATH-500 (greedy 0-shot, same harness): base GSM8K **84.6%** / MATH-500 **61.6%** → v2 LoRA **85.0% / 62.8%**. Preferred train knobs are lr `2e-5`, batch 2×4, `max_grad_norm` 0.1. Write-up: [`experiments/qwen25_3b_math500_300/FINDINGS.md`](experiments/qwen25_3b_math500_300/FINDINGS.md). Merged model: [Ba2han/math-test-maxx](https://huggingface.co/Ba2han/math-test-maxx).
+
 ## Test pack (ready now)
 
 A `.venv` in this directory is for **unit + synthetic** tests. It has numpy/pytest/pyarrow only. A working GPU torch + Unsloth install is required for `--mode smoke`; do not drop a broken Windows CPU torch wheel into this venv.

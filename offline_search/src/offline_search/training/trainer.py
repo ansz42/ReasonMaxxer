@@ -27,11 +27,11 @@ def _set_seed(seed: int) -> None:
 @dataclass
 class TrainSettings:
     learning_rate: float = 2.0e-5
-    batch_size: int = 1
-    gradient_accumulation_steps: int = 1
+    batch_size: int = 2
+    gradient_accumulation_steps: int = 4
     epochs: int = 1
     max_steps: int | None = None
-    max_grad_norm: float = 1.0
+    max_grad_norm: float = 0.1
     seed: int = 42
     logging_steps: int = 5
     save_steps: int | None = 100

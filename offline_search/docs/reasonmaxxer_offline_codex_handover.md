@@ -1166,9 +1166,10 @@ training:
     - o_proj
 
   learning_rate: 2.0e-5
-  batch_size: 1
-  gradient_accumulation_steps: 16
+  batch_size: 2
+  gradient_accumulation_steps: 4
   epochs: 1
+  max_grad_norm: 0.1
 
   kl_coef: 0.0          # start simple; add KL once core loss is validated
 
