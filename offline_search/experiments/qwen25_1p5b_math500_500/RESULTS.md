@@ -19,39 +19,43 @@ vLLM, boxed chat prompt, MathVerifier. Not the official few-shot card, and not t
 
 | Model | GSM8K (n=1319) | MATH-500 (n=500) |
 | --- | ---: | ---: |
-| Base `unsloth/Qwen2.5-1.5B-Instruct` | **71.5%** | **50.4%** |
-| v1 final (2e-5, 2×4, 1715) | 51.9% | 29.8% |
-| v1 checkpoint-500 | 69.4% | 41.6% |
-| v2 final (1e-5, 4×4, 5% warmup, 858) | 67.2% | 39.2% |
-| v2 vs 1.5B base | −4.2 pp | −11.2 pp |
-| v2 vs v1 final | +15.4 pp | +9.4 pp |
+| Base `unsloth/Qwen2.5-1.5B-Instruct` | 71.5% (943) | 50.4% (252) |
+| v1 final (2e-5, 2×4, 1715) | 51.9% (684) | 29.8% (149) |
+| v1 checkpoint-500 | 69.4% (915) | 41.6% (208) |
+| v2 final (1e-5, 4×4, 5% warmup, 858) | 67.2% (887) | 39.2% (196) |
+| **v3 final** (1e-5, 4×4, r=16, hard mask) | **74.3%** (980) | **51.8%** (259) |
+| v3 vs 1.5B base | **+2.8 pp** | **+1.4 pp** |
+| v3 vs v2 | +7.1 pp | +12.6 pp |
 
-Official Qwen2.5-1.5B-Instruct (different protocol): GSM8K 73.2% / MATH 55.2%. Our 0-shot base is 71.5 / 50.4.
+Official Qwen2.5-1.5B-Instruct (different protocol): GSM8K 73.2% / MATH 55.2%. Our 0-shot base is 71.5 / 50.4. v3 is the first adapter on this pack that beats the 1.5B base on both benches.
 
 ## Pack eval (in-domain MATH-500, temp 0.6, n=4)
 
 | Run | pass@1 | pass@4 |
 | --- | ---: | ---: |
 | v1 final | 30.4% | 48.0% |
-| v2 final | **33.2%** | **51.6%** |
+| v2 final | 33.2% | 51.6% |
+| **v3 final** | **51.4%** | **66.8%** |
 
 ## Search / train
 
-Search was run once (6000 rollouts) and reused for v2.
+Search was run once (6000 rollouts) and reused for v2 and v3.
 
-| | v1 | v2 |
-| --- | ---: | ---: |
-| rollouts | 6000 | same search |
-| mean reward | 0.652 | same search |
-| exact-correct | 2515 / 6000 | same search |
-| informative rows | 3429 / 3692 | 3429 / 3692 (dataset rebuilt with EOS) |
-| lr / batch | 2e-5, 2×4 | **1e-5, 4×4**, 5% warmup |
-| micro-steps | 1715 | **858** |
-| Adam updates | 429 | **214** (10 warmup) |
-| last-50 loss mean | −48.7 | −79.5 |
-| loss min / max | −446 / +320 | −326 / +280 |
-| train wall | 847 s | 908 s |
+| | v1 | v2 | v3 |
+| --- | ---: | ---: | ---: |
+| rollouts | 6000 | same search | same search |
+| mean reward | 0.652 | same search | same search |
+| exact-correct | 2515 / 6000 | same search | same search |
+| rows in / informative | 3692 / 3429 | 3692 / 3429 (EOS rebuild) | **3538 / 2968** (drop clipped + zero-A) |
+| LoRA | r=64 + MLP | r=64 + MLP | **r=16 + MLP** |
+| entropy | soft sigmoid | soft sigmoid | **hard 0.8 / 0.25** |
+| lr / batch | 2e-5, 2×4 | 1e-5, 4×4, 5% warmup | same as v2 |
+| micro-steps | 1715 | 858 | **742** |
+| Adam updates | 429 | 214 (10 warmup) | **185** (9 warmup) |
+| last-50 loss mean | −48.7 | −79.5 | **−0.51** |
+| loss min / max | −446 / +320 | −326 / +280 | **−6.22 / +1.93** |
+| train wall | 847 s | 908 s | **493 s** |
 
-v2 recovers most of the v1 collapse but still loses to the 1.5B base. v1 checkpoint-500 is the closest trained point (69.4 / 41.6).
+v3 is the first 1.5B point that beats the base. Loss stays bounded after the per-sequence mean, hard entropy mask, clipped-trace drop, and `neg_prob_floor`.
 
-Local writes: `FINDINGS.md` (this folder), harness JSON on the box under `outputs/qwen25_1p5b_math500_500/eval_harness/`.
+Local writes: `FINDINGS.md` (this folder), harness JSON on the box under `outputs/qwen25_1p5b_math500_500/eval_harness/` (`comparison_v3.json`).

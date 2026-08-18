@@ -1,0 +1,60 @@
+{
+  "protocol": "greedy 0-shot vLLM boxed chat + MathVerifier vs Qwen2.5-1.5B base",
+  "harness": [
+    {
+      "label": "qwen25-1p5b-base",
+      "model": "unsloth/Qwen2.5-1.5B-Instruct",
+      "gsm8k_pass@1": 0.7149355572403336,
+      "gsm8k_n": 1319,
+      "gsm8k_correct": 943,
+      "math500_pass@1": 0.504,
+      "math500_n": 500,
+      "math500_correct": 252
+    },
+    {
+      "label": "qwen25-1p5b-lora",
+      "model": "outputs/qwen25_1p5b_math500_500/merged/math-test-maxx-1p5b",
+      "gsm8k_pass@1": 0.5185746777862017,
+      "gsm8k_n": 1319,
+      "gsm8k_correct": 684,
+      "math500_pass@1": 0.298,
+      "math500_n": 500,
+      "math500_correct": 149
+    },
+    {
+      "label": "qwen25-1p5b-ckpt500",
+      "model": "outputs/qwen25_1p5b_math500_500/merged/math-test-maxx-1p5b-ckpt500",
+      "gsm8k_pass@1": 0.6937073540561031,
+      "gsm8k_n": 1319,
+      "gsm8k_correct": 915,
+      "math500_pass@1": 0.416,
+      "math500_n": 500,
+      "math500_correct": 208
+    },
+    {
+      "label": "qwen25-1p5b-lora-v2",
+      "model": "outputs/qwen25_1p5b_math500_500/merged/math-test-maxx-1p5b-v2",
+      "gsm8k_pass@1": 0.6724791508718726,
+      "gsm8k_n": 1319,
+      "gsm8k_correct": 887,
+      "math500_pass@1": 0.392,
+      "math500_n": 500,
+      "math500_correct": 196
+    },
+    {
+      "label": "qwen25-1p5b-lora-v3",
+      "model": "outputs/qwen25_1p5b_math500_500/merged/math-test-maxx-1p5b-v3",
+      "gsm8k_pass@1": 0.7429871114480667,
+      "gsm8k_n": 1319,
+      "gsm8k_correct": 980,
+      "math500_pass@1": 0.518,
+      "math500_n": 500,
+      "math500_correct": 259
+    }
+  ],
+  "pack_eval_temp0.6_n4": {
+    "v1": {"pass@1": 0.3035, "pass@4": 0.48},
+    "v2": {"pass@1": 0.3315, "pass@4": 0.516},
+    "v3": {"pass@1": 0.514, "pass@4": 0.668}
+  }
+}

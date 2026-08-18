@@ -25,6 +25,8 @@ Measured Qwen3-1.7B smoke results: [`experiments/qwen3_1p7b_test_pack/RESULTS.md
 
 Measured Qwen2.5-3B MATH-500 (greedy 0-shot, same harness): base GSM8K **84.6%** / MATH-500 **61.6%** → v2 LoRA **85.0% / 62.8%**. Preferred train knobs are lr `2e-5`, batch 2×4, `max_grad_norm` 0.1. Write-up: [`experiments/qwen25_3b_math500_300/FINDINGS.md`](experiments/qwen25_3b_math500_300/FINDINGS.md). Merged model: [Ba2han/math-test-maxx](https://huggingface.co/Ba2han/math-test-maxx).
 
+Measured Qwen2.5-1.5B MATH-500 (same harness): base GSM8K **71.5%** / MATH-500 **50.4%** → v3 LoRA **74.3% / 51.8%**. v3 is r=16 + MLP, hard entropy mask, drop clipped, per-sequence signed loss. Write-up: [`experiments/qwen25_1p5b_math500_500/FINDINGS.md`](experiments/qwen25_1p5b_math500_500/FINDINGS.md).
+
 ## Test pack (ready now)
 
 A `.venv` in this directory is for **unit + synthetic** tests. It has numpy/pytest/pyarrow only. A working GPU torch + Unsloth install is required for `--mode smoke`; do not drop a broken Windows CPU torch wheel into this venv.
@@ -63,7 +65,7 @@ python examples\qwen25_3b\run_test_pack.py --mode smoke
 
 See `examples/qwen25_3b/README.md`.
 
-Full-split 1.5B follow-up (all 500 MATH-500 items, LoRA r=64 on q/k/o/v/up/down/gate):
+Full-split 1.5B follow-up (all 500 MATH-500 items; v3 LoRA r=16 on q/k/o/v/up/down/gate):
 
 ```powershell
 python scripts\sample_math500.py --n 500 --out examples\qwen25_1p5b\fixtures\math500_500.json
@@ -72,7 +74,7 @@ python examples\qwen25_1p5b\run_test_pack.py --mode smoke
 ```
 
 - model: `unsloth/Qwen2.5-1.5B-Instruct`
-- trainer: Unsloth LoRA, rank 64, α=128, QKVO + up/down/gate
+- trainer: Unsloth LoRA, rank 16, α=32, QKVO + up/down/gate (v1/v2 were r=64)
 - config: `configs/test_pack_qwen25_1p5b.yaml`
 - fixtures: `examples/qwen25_1p5b/fixtures/math500_500.json`
 
