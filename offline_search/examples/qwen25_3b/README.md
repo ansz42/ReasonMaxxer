@@ -75,4 +75,22 @@ outputs/qwen25_3b_math500_300/
   train/adapter/
   train/train_metrics.json
   eval/qwen25_lora.json
+  merged/math-test-maxx/
+  eval_harness/math-test-maxx_summary.json
 ```
+
+## 4. Merge LoRA, upload, evaluate GSM8K / MATH-500
+
+After training, merge the latest adapter (`train/adapter`, else the highest `checkpoint-*`) into 16-bit weights named `math-test-maxx` and push to the Hub:
+
+```powershell
+python scripts\05_merge_and_push.py --config configs\test_pack_qwen25_3b.yaml --name math-test-maxx
+```
+
+Greedy pass@1 harness (vLLM, same boxed chat prompt + MathVerifier). Official Qwen2.5-3B-Instruct GSM8K is 86.7% 8-shot; this run is 0-shot CoT, so expect something nearer ~80% on the base model.
+
+```powershell
+python scripts\06_eval_benchmarks.py --config configs\eval_math_harness.yaml --model outputs\qwen25_3b_math500_300\merged\math-test-maxx
+```
+
+MATH-500 here is the full 500-item test set. 300 of those items were in the offline-search train pack.

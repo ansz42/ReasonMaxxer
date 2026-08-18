@@ -1,0 +1,37 @@
+# Greedy pass@1 math harness for the merged math-test-maxx model.
+# Override --model with the local merged dir or Hub id.
+
+output_dir: outputs/qwen25_3b_math500_300
+
+model:
+  name: unsloth/Qwen2.5-3B-Instruct
+  max_seq_length: 6144
+  enable_thinking: false
+  prompt_style: qwen3_chat
+  backend: unsloth
+
+search:
+  backend: vllm
+  generation_batch_size: 64
+  gpu_memory_utilization: 0.5
+  enforce_eager: false
+
+evaluation:
+  pass_k:
+    - 1
+  temperature: 0.0
+  top_p: 1.0
+  n_samples: 1
+  max_tokens: 3000
+  generation_batch_size: 64
+  seed: 42
+
+benchmarks:
+  - gsm8k
+  - math500
+
+wandb:
+  enabled: true
+  project: offline-search
+  name: math-test-maxx-harness
+  group: qwen25-3b-math500

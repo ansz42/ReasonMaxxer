@@ -46,3 +46,13 @@ def test_qwen25_3b_test_pack_is_unsloth_lora_math500():
     assert problems.exists()
     payload = problems.read_text(encoding="utf-8")
     assert '"n": 300' in payload or '"num_records": 300' in payload
+
+
+def test_eval_math_harness_is_greedy_gsm8k_math500():
+    cfg = ExperimentConfig.from_yaml(ROOT / "configs" / "eval_math_harness.yaml")
+    assert cfg.search.backend == "vllm"
+    assert cfg.evaluation.temperature == 0.0
+    assert cfg.evaluation.n_samples == 1
+    assert cfg.evaluation.pass_k == [1]
+    assert cfg.evaluation.max_tokens == 3000
+    assert cfg.raw.get("benchmarks") == ["gsm8k", "math500"]
