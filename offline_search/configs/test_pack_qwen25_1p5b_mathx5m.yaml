@@ -1,0 +1,88 @@
+# Qwen2.5-1.5B-Instruct LoRA on 2000 streamed MathX-5M problems, 10 answers each (20k).
+# Search uses a single vLLM batched n=10 pass. Training is the v3 signed-entropy recipe.
+
+problems_file: examples/qwen25_1p5b/fixtures/mathx5m_2000.json
+output_dir: outputs/qwen25_1p5b_mathx5m_2000
+
+model:
+  name: unsloth/Qwen2.5-1.5B-Instruct
+  max_seq_length: 6144
+  load_in_4bit: true
+  enable_thinking: false
+  prompt_style: qwen3_chat
+  backend: unsloth
+
+search:
+  backend: vllm
+  generation_batch_size: 16
+  gpu_memory_utilization: 0.75
+  enforce_eager: false
+  initial_samples_per_config: 10
+  total_samples_per_problem: 10
+  exploration_fraction: 0.20
+  allocation_temperature: 0.5
+  max_tokens: 2500
+  seed: 42
+  retry_clipped: false
+  configs:
+    - temperature: 0.85
+      top_p: 0.95
+
+selection:
+  max_correct_per_problem: 4
+  max_near_correct_per_problem: 4
+  max_hard_negatives_per_problem: 4
+  max_low_reward_negatives_per_problem: 2
+  drop_clipped: true
+
+entropy:
+  threshold: 0.8
+  scale: 0.25
+  mode: hard
+
+training:
+  backend: unsloth
+  lora_rank: 16
+  lora_alpha: 32
+  lora_dropout: 0.0
+  target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+    - gate_proj
+    - up_proj
+    - down_proj
+  learning_rate: 1.0e-5
+  batch_size: 2
+  gradient_accumulation_steps: 8
+  warmup_ratio: 0.05
+  epochs: 1
+  max_steps: 400
+  save_steps: 100
+  drop_zero_advantage: true
+  min_abs_advantage: 1.0e-8
+  cover_all_informative: true
+  kl_coef: 0.0
+  neg_prob_floor: 1.0e-4
+  objective: graded_signed
+  max_grad_norm: 0.1
+  seed: 42
+  logging_steps: 1
+
+evaluation:
+  pass_k:
+    - 1
+    - 4
+  temperature: 0.6
+  top_p: 0.95
+  n_samples: 4
+  max_tokens: 2500
+  generation_batch_size: 32
+  seed: 42
+
+wandb:
+  enabled: true
+  project: offline-search
+  name: qwen25-1p5b-mathx5m-2000
+  group: qwen25-1p5b-mathx5m

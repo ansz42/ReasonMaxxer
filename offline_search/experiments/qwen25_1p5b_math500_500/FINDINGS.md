@@ -15,14 +15,17 @@ Comparison is against the **same 1.5B base**, not the 3B table. Official Qwen2.5
 | v1 final (2e-5, 2×4, 1715 steps) | 51.9% (684) | 29.8% (149) |
 | v1 checkpoint-500 | 69.4% (915) | 41.6% (208) |
 | v2 final (1e-5, 4×4, 5% warmup, 858 steps) | 67.2% (887) | 39.2% (196) |
-| **v3 final** (1e-5, 4×4, r=16, hard mask, 742 steps) | **74.3%** (980) | **51.8%** (259) |
-| v3 vs 1.5B base | **+2.8 pp** | **+1.4 pp** |
+| **v3 final** (1e-5, 4×4, r=16, hard mask, 742 steps) | **74.3%** (980) | 51.8% (259) |
+| **MathX-5M** (2000 streamed, 20k answers, same v3 train recipe) | 73.7% (972) | **53.8%** (269) |
+| v3 vs 1.5B base | **+2.8 pp** | +1.4 pp |
+| MathX vs 1.5B base | +2.2 pp | **+3.4 pp** |
+| MathX vs v3 | −0.6 pp | **+2.0 pp** |
 | v3 vs v2 | +7.1 pp | +12.6 pp |
 | v2 vs v1 final | +15.4 pp | +9.4 pp |
 
-GSM8K is held-out. MATH-500 is in-domain (the pack trains on the full test split).
+GSM8K is held-out for every 1.5B adapter. MATH-500 is **in-domain for v1–v3** (the pack trains on the full test split) and **held-out for MathX** (streamed `Modotte/MathX-5M`). MathX write-up: [`../qwen25_1p5b_mathx5m_2000/FINDINGS.md`](../qwen25_1p5b_mathx5m_2000/FINDINGS.md).
 
-Our 1.5B base lands close to the official card (71.5 vs 73.2 GSM8K, 50.4 vs 55.2 MATH) once you allow for 0-shot vs few-shot. **v3 is the first adapter that beats this base** on both benches.
+Our 1.5B base lands close to the official card (71.5 vs 73.2 GSM8K, 50.4 vs 55.2 MATH) once you allow for 0-shot vs few-shot. **v3 is the first adapter that beats this base on both benches.** MathX then takes the MATH-500 lead (+10 vs v3) while staying slightly behind v3 on GSM8K.
 
 ## What ran (v1)
 

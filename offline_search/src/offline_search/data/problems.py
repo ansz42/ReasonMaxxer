@@ -26,6 +26,8 @@ def load_problems_file(path: str | Path, *, prompt_style: str = "qwen3_chat") ->
             reference = row.get("reference_answer")
         if reference is None:
             reference = row.get("answer")
+        if reference is None:
+            reference = row.get("expected_answer")
         prompt = str(row.get("prompt") or build_user_prompt(str(text), prompt_style=prompt_style))
         problems.append(
             Problem(

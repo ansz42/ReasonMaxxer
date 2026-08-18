@@ -23,11 +23,14 @@ vLLM, boxed chat prompt, MathVerifier. Not the official few-shot card, and not t
 | v1 final (2e-5, 2×4, 1715) | 51.9% (684) | 29.8% (149) |
 | v1 checkpoint-500 | 69.4% (915) | 41.6% (208) |
 | v2 final (1e-5, 4×4, 5% warmup, 858) | 67.2% (887) | 39.2% (196) |
-| **v3 final** (1e-5, 4×4, r=16, hard mask) | **74.3%** (980) | **51.8%** (259) |
-| v3 vs 1.5B base | **+2.8 pp** | **+1.4 pp** |
+| **v3 final** (1e-5, 4×4, r=16, hard mask) | **74.3%** (980) | 51.8% (259) |
+| **MathX-5M LoRA** (2000 streamed, 20k answers) | 73.7% (972) | **53.8%** (269) |
+| v3 vs 1.5B base | **+2.8 pp** | +1.4 pp |
+| MathX vs 1.5B base | +2.2 pp | **+3.4 pp** |
+| MathX vs v3 | −0.6 pp | **+2.0 pp** |
 | v3 vs v2 | +7.1 pp | +12.6 pp |
 
-Official Qwen2.5-1.5B-Instruct (different protocol): GSM8K 73.2% / MATH 55.2%. Our 0-shot base is 71.5 / 50.4. v3 is the first adapter on this pack that beats the 1.5B base on both benches.
+Official Qwen2.5-1.5B-Instruct (different protocol): GSM8K 73.2% / MATH 55.2%. Our 0-shot base is 71.5 / 50.4. v3 is the first adapter on the MATH-500 pack that beats the 1.5B base on both benches. MathX (held-out vs MATH-500) later posts the best MATH-500 score on this harness. Details: [`../qwen25_1p5b_mathx5m_2000/FINDINGS.md`](../qwen25_1p5b_mathx5m_2000/FINDINGS.md).
 
 ## AIME 2024 avg@8 (v3 final only)
 

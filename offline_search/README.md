@@ -27,6 +27,8 @@ Measured Qwen2.5-3B MATH-500 (greedy 0-shot, same harness): base GSM8K **84.6%**
 
 Measured Qwen2.5-1.5B MATH-500 (same harness): base GSM8K **71.5%** / MATH-500 **50.4%** → v3 LoRA **74.3% / 51.8%**. v3 is r=16 + MLP, hard entropy mask, drop clipped, per-sequence signed loss. Write-up: [`experiments/qwen25_1p5b_math500_500/FINDINGS.md`](experiments/qwen25_1p5b_math500_500/FINDINGS.md).
 
+Measured Qwen2.5-1.5B MathX-5M (2000 streamed problems, 20k parallel answers, same v3 train recipe and harness): GSM8K **73.7%** / MATH-500 **53.8%** (+2.2 / +3.4 vs base; −0.6 / +2.0 vs v3). MATH-500 is held-out here. Write-up: [`experiments/qwen25_1p5b_mathx5m_2000/FINDINGS.md`](experiments/qwen25_1p5b_mathx5m_2000/FINDINGS.md).
+
 ## Test pack (ready now)
 
 A `.venv` in this directory is for **unit + synthetic** tests. It has numpy/pytest/pyarrow only. A working GPU torch + Unsloth install is required for `--mode smoke`; do not drop a broken Windows CPU torch wheel into this venv.
