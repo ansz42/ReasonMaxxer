@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any
 
 
@@ -59,6 +60,25 @@ def render_generation_prompt(
     return apply_chat_template(tokenizer, user_text, enable_thinking=enable_thinking)
 
 
+def _as_token_ids(out: Any) -> list[int]:
+    """Coerce tokenizer.encode / tokenizer() output to a flat list of ints.
+
+    HuggingFace returns a BatchEncoding (UserDict, not dict). Iterating that
+    object yields keys such as ``input_ids``, which is what blew up dataset
+    build with ``int('input_ids')``.
+    """
+    ids = out
+    if isinstance(out, Mapping) and "input_ids" in out:
+        ids = out["input_ids"]
+    elif not isinstance(out, (list, tuple)) and hasattr(out, "input_ids"):
+        ids = out.input_ids
+    if hasattr(ids, "tolist"):
+        ids = ids.tolist()
+    if isinstance(ids, (list, tuple)) and ids and isinstance(ids[0], (list, tuple)):
+        ids = ids[0]
+    return [int(x) for x in ids]
+
+
 def encode_ids(tokenizer: Any, text: str, *, add_special_tokens: bool = False) -> list[int]:
     if tokenizer is None:
         raise ValueError("tokenizer is required")
@@ -67,18 +87,13 @@ def encode_ids(tokenizer: Any, text: str, *, add_special_tokens: bool = False) -
             out = tokenizer(text, add_special_tokens=add_special_tokens)
         except TypeError:
             out = tokenizer(text)
-        ids = out["input_ids"] if isinstance(out, dict) else out
-        if hasattr(ids, "tolist"):
-            ids = ids.tolist()
-        if isinstance(ids, list) and ids and isinstance(ids[0], list):
-            ids = ids[0]
-        return [int(x) for x in ids]
+        return _as_token_ids(out)
     if hasattr(tokenizer, "encode"):
         try:
             ids = tokenizer.encode(text, add_special_tokens=add_special_tokens)
         except TypeError:
             ids = tokenizer.encode(text)
-        return [int(x) for x in ids]
+        return _as_token_ids(ids)
     raise TypeError(f"Tokenizer {type(tokenizer)!r} has no encode path")
 
 

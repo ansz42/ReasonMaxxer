@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+from collections import UserDict
+
 from offline_search.data.build_training_dataset import build_training_rows, tokenize_pair
 from offline_search.prompting import (
     encode_generation_prefix,
+    encode_ids,
     encode_training_sequence,
     render_generation_prompt,
 )
@@ -40,6 +43,33 @@ class FakeChatTokenizer:
 
     def encode(self, text, add_special_tokens=False):
         return self(text, add_special_tokens=add_special_tokens)["input_ids"]
+
+
+class BatchEncodingLike(UserDict):
+    """Mimics transformers.BatchEncoding: UserDict, not dict; iter yields keys."""
+
+
+class HfBatchEncodingTokenizer(FakeChatTokenizer):
+    """Same chat tokenizer, but __call__ returns a BatchEncoding-shaped mapping."""
+
+    def __call__(self, text, add_special_tokens=False, **kwargs):
+        ids = super().__call__(text, add_special_tokens=add_special_tokens, **kwargs)["input_ids"]
+        return BatchEncodingLike({"input_ids": ids, "attention_mask": [1] * len(ids)})
+
+
+def test_encode_ids_unwraps_batch_encoding_mapping():
+    tok = HfBatchEncodingTokenizer()
+    ids = encode_ids(tok, "hello", add_special_tokens=False)
+    expected = list(tok("hello", add_special_tokens=False)["input_ids"])
+    assert ids == expected
+    assert ids and all(isinstance(x, int) for x in ids)
+
+
+def test_encode_generation_prefix_accepts_batch_encoding_tokenizer():
+    tok = HfBatchEncodingTokenizer()
+    rendered, prefix_ids = encode_generation_prefix(tok, "Solve this")
+    expected = list(tok(rendered, add_special_tokens=False)["input_ids"])
+    assert prefix_ids == expected
 
 
 def test_generation_prefix_is_chat_template_not_raw_prompt():
