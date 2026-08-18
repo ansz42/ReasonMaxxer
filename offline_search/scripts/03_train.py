@@ -8,6 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
+from offline_search.prompting import ensure_pad_token, resolve_pad_token_id
 from offline_search.runtime import load_experiment
 from offline_search.training.lora import load_unsloth_lora, save_lora
 from offline_search.training.trainer import TrainSettings, train_signed_entropy
@@ -51,6 +52,17 @@ def main() -> None:
         target_modules=t.target_modules,
         seed=t.seed,
     )
+    ensure_pad_token(tokenizer)
+    pad_id = resolve_pad_token_id(tokenizer)
+    cfg_model = getattr(model, "config", None)
+    if cfg_model is not None and getattr(cfg_model, "pad_token_id", None) is None:
+        cfg_model.pad_token_id = pad_id
+    print(
+        "tokenizer specials: "
+        f"bos={getattr(tokenizer, 'bos_token', None)}/{getattr(tokenizer, 'bos_token_id', None)} "
+        f"eos={getattr(tokenizer, 'eos_token', None)}/{getattr(tokenizer, 'eos_token_id', None)} "
+        f"pad={getattr(tokenizer, 'pad_token', None)}/{pad_id}"
+    )
     del tokenizer
     try:
         from unsloth import FastLanguageModel
@@ -73,8 +85,10 @@ def main() -> None:
         drop_zero_advantage=t.drop_zero_advantage,
         min_abs_advantage=t.min_abs_advantage,
         cover_all_informative=t.cover_all_informative,
+        warmup_steps=t.warmup_steps,
+        warmup_ratio=t.warmup_ratio,
     )
-    metrics = train_signed_entropy(model, rows, settings=settings, output_dir=output_dir)
+    metrics = train_signed_entropy(model, rows, settings=settings, output_dir=output_dir, pad_id=pad_id)
     save_lora(model, str(output_dir / "adapter"))
     acc = metrics.get("accounting", {})
     losses = [float(x["loss"]) for x in metrics.get("logs", [])]
@@ -85,6 +99,8 @@ def main() -> None:
             "train/num_rows": metrics.get("num_rows"),
             "train/num_rows_dropped": metrics.get("num_rows_dropped"),
             "train/max_steps_effective": metrics.get("max_steps_effective"),
+            "train/warmup_updates": metrics.get("warmup_updates"),
+            "train/optimizer_updates": metrics.get("optimizer_updates"),
             "train/wall_time_s": acc.get("training_wall_time_s", 0.0),
             "train/tokens_total": acc.get("training_tokens", 0),
             "train/loss_first": losses[0] if losses else None,
@@ -100,7 +116,10 @@ def main() -> None:
     )
     if losses:
         print(f"loss first={losses[0]:.4f} last={losses[-1]:.4f} mean={sum(losses)/len(losses):.4f}")
-    print(f"train_wall_s={acc.get('training_wall_time_s')} tokens={acc.get('training_tokens')}")
+    print(
+        f"train_wall_s={acc.get('training_wall_time_s')} tokens={acc.get('training_tokens')} "
+        f"warmup_updates={metrics.get('warmup_updates')} optimizer_updates={metrics.get('optimizer_updates')}"
+    )
 
 
 if __name__ == "__main__":

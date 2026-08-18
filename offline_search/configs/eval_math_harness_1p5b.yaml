@@ -1,0 +1,37 @@
+# Greedy pass@1 math harness for Qwen2.5-1.5B (base or merged LoRA).
+# Override --model with the local merged dir or Hub id.
+
+output_dir: outputs/qwen25_1p5b_math500_500
+
+model:
+  name: unsloth/Qwen2.5-1.5B-Instruct
+  max_seq_length: 6144
+  enable_thinking: false
+  prompt_style: qwen3_chat
+  backend: unsloth
+
+search:
+  backend: vllm
+  generation_batch_size: 64
+  gpu_memory_utilization: 0.5
+  enforce_eager: false
+
+evaluation:
+  pass_k:
+    - 1
+  temperature: 0.0
+  top_p: 1.0
+  n_samples: 1
+  max_tokens: 3000
+  generation_batch_size: 64
+  seed: 42
+
+benchmarks:
+  - gsm8k
+  - math500
+
+wandb:
+  enabled: true
+  project: offline-search
+  name: qwen25-1p5b-math-harness
+  group: qwen25-1p5b-math500

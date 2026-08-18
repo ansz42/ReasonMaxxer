@@ -67,9 +67,10 @@ def test_qwen25_1p5b_test_pack_is_rank64_full_math500():
         "down_proj",
         "gate_proj",
     ]
-    assert cfg.training.learning_rate == 2.0e-5
-    assert cfg.training.batch_size == 2
+    assert cfg.training.learning_rate == 1.0e-5
+    assert cfg.training.batch_size == 4
     assert cfg.training.gradient_accumulation_steps == 4
+    assert cfg.training.warmup_ratio == 0.05
     assert cfg.training.max_grad_norm == 0.1
     assert cfg.search.backend == "vllm"
     assert cfg.search.total_samples_per_problem == 12
@@ -89,3 +90,15 @@ def test_eval_math_harness_is_greedy_gsm8k_math500():
     assert cfg.evaluation.pass_k == [1]
     assert cfg.evaluation.max_tokens == 3000
     assert cfg.raw.get("benchmarks") == ["gsm8k", "math500"]
+
+
+def test_eval_math_harness_1p5b_is_greedy_gsm8k_math500():
+    cfg = ExperimentConfig.from_yaml(ROOT / "configs" / "eval_math_harness_1p5b.yaml")
+    assert cfg.model.name == "unsloth/Qwen2.5-1.5B-Instruct"
+    assert cfg.search.backend == "vllm"
+    assert cfg.evaluation.temperature == 0.0
+    assert cfg.evaluation.n_samples == 1
+    assert cfg.evaluation.pass_k == [1]
+    assert cfg.evaluation.max_tokens == 3000
+    assert cfg.raw.get("benchmarks") == ["gsm8k", "math500"]
+    assert cfg.output_dir == "outputs/qwen25_1p5b_math500_500"

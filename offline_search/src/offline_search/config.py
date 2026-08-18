@@ -87,6 +87,7 @@ class TrainingConfig:
     max_grad_norm: float = 0.1
     weight_decay: float = 0.0
     warmup_steps: int = 0
+    warmup_ratio: float = 0.0
     seed: int = 42
     logging_steps: int = 5
     save_steps: int | None = 100

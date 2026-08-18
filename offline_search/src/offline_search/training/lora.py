@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any, Sequence
 
+from offline_search.prompting import ensure_pad_token
+
 
 DEFAULT_TARGET_MODULES = ("q_proj", "k_proj", "v_proj", "o_proj")
 
@@ -35,12 +37,14 @@ def load_unsloth_base(
 ) -> tuple[Any, Any]:
     from unsloth import FastLanguageModel
 
-    return FastLanguageModel.from_pretrained(
+    model, tokenizer = FastLanguageModel.from_pretrained(
         model_name=model_name,
         max_seq_length=int(max_seq_length),
         load_in_4bit=bool(load_in_4bit),
         dtype=None,
     )
+    ensure_pad_token(tokenizer)
+    return model, tokenizer
 
 
 def load_unsloth_lora(
@@ -62,6 +66,12 @@ def load_unsloth_lora(
         load_in_4bit=bool(load_in_4bit),
         dtype=None,
     )
+    ensure_pad_token(tokenizer)
+    if getattr(tokenizer, "padding_side", None) != "right":
+        try:
+            tokenizer.padding_side = "right"
+        except Exception:
+            pass
     model = FastLanguageModel.get_peft_model(
         model,
         r=int(rank),

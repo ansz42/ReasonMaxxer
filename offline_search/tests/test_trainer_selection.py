@@ -7,7 +7,9 @@ from offline_search.training.trainer import (
     checkpoint_dir,
     filter_informative_rows,
     resolve_max_steps,
+    resolve_warmup_updates,
     save_lora_checkpoint,
+    scheduled_lr,
     should_save_checkpoint,
 )
 from tests.conftest import import_torch_or_skip
@@ -43,6 +45,31 @@ def test_cover_all_informative_does_not_shrink_cap():
 def test_cover_respects_batch_size():
     settings = TrainSettings(max_steps=1, batch_size=4, cover_all_informative=True)
     assert resolve_max_steps(10, settings) == 3
+
+
+def test_warmup_ratio_is_five_percent_of_optimizer_updates():
+    settings = TrainSettings(
+        batch_size=4,
+        gradient_accumulation_steps=4,
+        max_steps=200,
+        cover_all_informative=True,
+        warmup_ratio=0.05,
+    )
+    # 3429 informative / batch 4 = 858 micro-steps; 858 / 4 = 215 updates.
+    assert resolve_warmup_updates(3429, settings) == 10
+
+
+def test_explicit_warmup_steps_override_ratio():
+    settings = TrainSettings(warmup_steps=3, warmup_ratio=0.05, batch_size=4, gradient_accumulation_steps=4)
+    assert resolve_warmup_updates(3429, settings) == 3
+
+
+def test_scheduled_lr_ramps_linearly_then_holds():
+    assert scheduled_lr(1e-5, update_index=0, warmup_updates=10) == 0.0
+    assert abs(scheduled_lr(1e-5, update_index=1, warmup_updates=10) - 1e-6) < 1e-15
+    assert abs(scheduled_lr(1e-5, update_index=10, warmup_updates=10) - 1e-5) < 1e-15
+    assert scheduled_lr(1e-5, update_index=11, warmup_updates=10) == 1e-5
+    assert scheduled_lr(1e-5, update_index=1, warmup_updates=0) == 1e-5
 
 
 def test_trainer_skips_zero_advantage_rows():
@@ -118,6 +145,50 @@ def test_save_lora_checkpoint_writes_step_dir(tmp_path):
     assert dest == checkpoint_dir(tmp_path, 100)
     assert dest.name == "checkpoint-100"
     assert (dest / "adapter_model.bin").exists()
+
+
+def test_trainer_applies_warmup_lr_on_optimizer_updates():
+    torch = import_torch_or_skip()
+    import torch.nn as nn
+
+    from offline_search.training.trainer import train_signed_entropy
+
+    class TinyLM(nn.Module):
+        def __init__(self, vocab: int = 32, dim: int = 16) -> None:
+            super().__init__()
+            self.embed = nn.Embedding(vocab, dim)
+            self.lm_head = nn.Linear(dim, vocab, bias=False)
+
+        def forward(self, input_ids, attention_mask=None, **kwargs):
+            del attention_mask, kwargs
+            return type("Out", (), {"logits": self.lm_head(self.embed(input_ids))})()
+
+    def _row(token: int) -> dict:
+        ids = [1, token, token + 1, token + 2]
+        return {
+            "input_ids": ids,
+            "token_weight": [0.0, 1.0, 1.0, 1.0],
+            "response_mask": [0, 1, 1, 1],
+            "advantage": 1.0,
+        }
+
+    metrics = train_signed_entropy(
+        TinyLM(),
+        [_row(3), _row(5), _row(7), _row(9)],
+        settings=TrainSettings(
+            learning_rate=1e-5,
+            epochs=1,
+            max_steps=4,
+            batch_size=1,
+            gradient_accumulation_steps=1,
+            warmup_ratio=0.5,
+            seed=0,
+            logging_steps=1,
+        ),
+    )
+    lrs = [row["lr"] for row in metrics["logs"]]
+    assert lrs[0] == 0.0 or lrs[0] < 1e-5
+    assert abs(lrs[-1] - 1e-5) < 1e-15
 
 
 def test_trainer_saves_lora_every_save_steps(tmp_path):

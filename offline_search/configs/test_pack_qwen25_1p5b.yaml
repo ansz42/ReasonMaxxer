@@ -67,9 +67,10 @@ training:
     - up_proj
     - down_proj
     - gate_proj
-  learning_rate: 2.0e-5
-  batch_size: 2
+  learning_rate: 1.0e-5
+  batch_size: 4
   gradient_accumulation_steps: 4
+  warmup_ratio: 0.05
   epochs: 1
   max_steps: 200
   save_steps: 50
@@ -96,5 +97,5 @@ evaluation:
 wandb:
   enabled: true
   project: offline-search
-  name: qwen25-1p5b-math500-500
+  name: qwen25-1p5b-math500-500-v2
   group: qwen25-1p5b-math500

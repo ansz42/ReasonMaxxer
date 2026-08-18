@@ -54,8 +54,8 @@ python scripts\04_eval.py --config configs\test_pack_qwen25_1p5b.yaml --label qw
 | problems | **all 500** MATH-500 test items |
 | search | vLLM, batch 64, max_model_len 6144, gpu_memory_utilization 0.5, eager off, 8 configs × 1 initial, **12 total / problem**, **3000 tokens** |
 | LoRA | r=64, alpha=128, **q/k/o/v/up/down/gate**, dropout 0 |
-| train | lr `2e-5`, batch 2×4, `max_grad_norm` 0.1, Unsloth, checkpoint every 50 |
-| eval | vLLM batched pass@1 and pass@4, n=4, 3000 tokens |
+| train | lr `1e-5`, batch 4×4, 5% warmup, `max_grad_norm` 0.1, Unsloth, checkpoint every 50 |
+| eval | pack: vLLM pass@1/@4, n=4, 3000 tokens; harness: greedy GSM8K + MATH-500 via `06_eval_benchmarks.py` |
 
 500 problems × 12 rollouts = 6000 search samples.
 
@@ -68,4 +68,14 @@ outputs/qwen25_1p5b_math500_500/
   train/adapter/
   train/checkpoint-50 ...
   eval/qwen25_1p5b_lora.json
+  eval_harness/qwen25-1p5b-base_summary.json
+  eval_harness/qwen25-1p5b-lora_summary.json
+```
+
+Greedy pass@1 harness (same boxed chat prompt + MathVerifier as the 3B table). MATH-500 is in-domain for this pack; GSM8K is held-out.
+
+```powershell
+python scripts\05_merge_and_push.py --config configs\test_pack_qwen25_1p5b.yaml --name math-test-maxx-1p5b --no-push
+python scripts\06_eval_benchmarks.py --config configs\eval_math_harness_1p5b.yaml --model unsloth/Qwen2.5-1.5B-Instruct --label qwen25-1p5b-base
+python scripts\06_eval_benchmarks.py --config configs\eval_math_harness_1p5b.yaml --model outputs\qwen25_1p5b_math500_500\merged\math-test-maxx-1p5b --label qwen25-1p5b-lora
 ```

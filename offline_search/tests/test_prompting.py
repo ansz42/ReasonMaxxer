@@ -4,10 +4,13 @@ from collections import UserDict
 
 from offline_search.data.build_training_dataset import build_training_rows, tokenize_pair
 from offline_search.prompting import (
+    append_eos_if_missing,
     encode_generation_prefix,
     encode_ids,
     encode_training_sequence,
+    ensure_pad_token,
     render_generation_prompt,
+    resolve_pad_token_id,
 )
 from offline_search.search.generate import GenerationResult
 from offline_search.search.sampling_configs import SamplingConfig
@@ -130,6 +133,42 @@ def test_encode_training_sequence_does_not_joint_bpe_across_boundary():
     ids, prompt_len, rendered = encode_training_sequence(tok, "hello", "world")
     assert rendered.endswith("<|im_start|>assistant\n")
     assert ids[prompt_len:] == tok("world", add_special_tokens=False)["input_ids"]
+
+
+def test_append_eos_if_missing_adds_once():
+    class Tok:
+        eos_token_id = 99
+
+    assert append_eos_if_missing(Tok(), [1, 2, 3]) == [1, 2, 3, 99]
+    assert append_eos_if_missing(Tok(), [1, 2, 99]) == [1, 2, 99]
+    assert append_eos_if_missing(object(), [1, 2]) == [1, 2]
+
+
+def test_encode_training_sequence_appends_eos():
+    tok = FakeChatTokenizer()
+    tok.eos_token_id = 99
+    ids, prompt_len, _rendered = encode_training_sequence(tok, "hello", "world")
+    response_ids = tok("world", add_special_tokens=False)["input_ids"]
+    assert ids[prompt_len:] == response_ids + [99]
+
+
+def test_resolve_pad_token_prefers_pad_then_eos():
+    class PadTok:
+        pad_token_id = 151643
+        eos_token_id = 151645
+
+    class EosOnly:
+        pad_token_id = None
+        eos_token_id = 7
+        pad_token = None
+        eos_token = "<eos>"
+
+    assert resolve_pad_token_id(PadTok()) == 151643
+    assert resolve_pad_token_id(EosOnly()) == 7
+    assert resolve_pad_token_id(object(), default=0) == 0
+    tok = EosOnly()
+    ensure_pad_token(tok)
+    assert tok.pad_token == "<eos>"
 
 
 def test_build_rows_uses_search_rendered_prompt():

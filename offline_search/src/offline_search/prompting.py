@@ -8,6 +8,41 @@ def uses_chat_template(tokenizer: Any) -> bool:
     return tokenizer is not None and hasattr(tokenizer, "apply_chat_template")
 
 
+def resolve_pad_token_id(tokenizer: Any, default: int = 0) -> int:
+    pad = getattr(tokenizer, "pad_token_id", None)
+    if pad is not None:
+        return int(pad)
+    eos = getattr(tokenizer, "eos_token_id", None)
+    if eos is not None:
+        return int(eos)
+    return int(default)
+
+
+def ensure_pad_token(tokenizer: Any) -> Any:
+    """If pad is unset, reuse EOS so batched encode/generate has a real pad id."""
+    if tokenizer is None:
+        return tokenizer
+    if getattr(tokenizer, "pad_token", None) is None and getattr(tokenizer, "eos_token", None) is not None:
+        tokenizer.pad_token = tokenizer.eos_token
+    if getattr(tokenizer, "pad_token_id", None) is None and getattr(tokenizer, "eos_token_id", None) is not None:
+        try:
+            tokenizer.pad_token_id = int(tokenizer.eos_token_id)
+        except Exception:
+            pass
+    return tokenizer
+
+
+def append_eos_if_missing(tokenizer: Any, ids: list[int]) -> list[int]:
+    eos = getattr(tokenizer, "eos_token_id", None)
+    if eos is None:
+        return list(ids)
+    eos_id = int(eos)
+    out = list(ids)
+    if not out or out[-1] != eos_id:
+        out.append(eos_id)
+    return out
+
+
 def build_user_prompt(problem_text: str, *, prompt_style: str = "qwen3_chat") -> str:
     style = (prompt_style or "qwen3_chat").strip().lower()
     if style == "raw":
@@ -141,4 +176,6 @@ def encode_training_sequence(
     )
     add_special = not uses_chat_template(tokenizer)
     response_ids = encode_ids(tokenizer, response, add_special_tokens=add_special)
+    if uses_chat_template(tokenizer):
+        response_ids = append_eos_if_missing(tokenizer, response_ids)
     return prefix_ids + response_ids, len(prefix_ids), rendered

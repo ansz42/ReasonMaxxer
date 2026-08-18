@@ -17,12 +17,13 @@ def main() -> None:
     parser.add_argument("--config", action="append", required=True)
     parser.add_argument("--output", default=None)
     parser.add_argument("--label", default="model")
+    parser.add_argument("--adapter", default=None, help="Override LoRA adapter dir.")
     args = parser.parse_args()
 
     cfg = load_experiment(*args.config)
     problems = load_problems(cfg)
     init_from_config(cfg, "eval")
-    adapter = Path(cfg.output_dir) / "train" / "adapter"
+    adapter = Path(args.adapter) if args.adapter else Path(cfg.output_dir) / "train" / "adapter"
     wandb_log({"stage/eval_start": 1, "eval/adapter": int(adapter.exists()), **gpu_snapshot()})
     _, _, backend = load_generation_stack(cfg, adapter_path=adapter if adapter.exists() else None)
     wandb_log({"stage/eval_model_loaded": 1, **gpu_snapshot()})
